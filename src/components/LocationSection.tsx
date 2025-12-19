@@ -4,14 +4,14 @@ import { MapPin, Phone, Clock } from "lucide-react";
 
 export function LocationSection() {
   return (
-    <section id="ubicacion" className="py-20 md:py-32 bg-celeste/10">
-      <div className="container">
+    <section id="ubicacion" className="py-20 md:py-32 bg-celeste/10 justify-center items-center">
+      <div className="container justify-around items-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center mb-12 justify-around items-center"
         >
           <h2 className="font-display text-3xl md:text-4xl font-bold mb-4">
             Nuestra <span className="text-celeste-dark">Ubicación</span>
@@ -21,13 +21,13 @@ export function LocationSection() {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
+        <div className="grid lg:grid-cols-2 gap-8 items-center justify-center px-2 md:px-12">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="space-y-6"
+            className="space-y-6 items-center justify-center w-full md:max-w-[35vw] mx-auto"
           >
             <div className="flex gap-4 p-6 rounded-xl bg-card border border-celeste/20 shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)]">
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-celeste/15 flex items-center justify-center">

@@ -22,8 +22,8 @@ const features = [
 
 export function AboutSection() {
   return (
-    <section id="nosotros" className="py-20 md:py-32">
-      <div className="container">
+    <section id="nosotros" className="py-20 md:py-32 mx-auto">
+      <div className="container mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}

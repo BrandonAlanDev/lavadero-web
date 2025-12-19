@@ -3,8 +3,8 @@ import { Car } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="py-8 border-t border-celeste/20 bg-celeste/5">
-      <div className="container">
+    <footer className="py-8 border-t border-celeste/20 bg-celeste/5 mx-auto">
+      <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Car className="w-5 h-5 text-primary" />

@@ -21,8 +21,8 @@ const images = [
 
 export function ImageCarousel() {
   return (
-    <section id="servicios" className="py-20 md:py-32 bg-celeste/10">
-      <div className="container">
+    <section id="servicios" className="py-20 md:py-32 bg-celeste/10  mx-auto">
+      <div className="container  mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
