@@ -26,6 +26,21 @@ model account {
   @@index([userId], map: "Account_userId_fkey")
 }
 
+// Modelo Bicicleta DE EJEMPLO
+model Bicicleta {
+  id        Int      @id @default(autoincrement())
+  marca     String
+  modelo    String
+  rodado    Int
+  color     String?
+  creadaEn  DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
 model servicio {
   id                String              @id
   nombre            String?
