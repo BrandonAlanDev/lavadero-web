@@ -6,23 +6,9 @@ generator client {
 datasource db {
   provider = "mysql"
 }
-// ... Modelos ...
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          Role      @default(USER)
-  accounts      Account[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-model Account {
-  id                String  @id @default(cuid())
+model account {
+  id                String  @id
   userId            String
   type              String
   provider          String
@@ -34,13 +20,99 @@ model Account {
   scope             String?
   id_token          String? @db.Text
   session_state     String?
+  user              user    @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Account_userId_fkey")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId], map: "Account_provider_providerAccountId_key")
+  @@index([userId], map: "Account_userId_fkey")
+}
 
-  @@unique([provider, providerAccountId])
+// Modelo Bicicleta DE EJEMPLO
+model Bicicleta {
+  id        Int      @id @default(autoincrement())
+  marca     String
+  modelo    String
+  rodado    Int
+  color     String?
+  creadaEn  DateTime @default(now())
 }
 
 enum Role {
+  USER
+  ADMIN
+}
+
+model servicio {
+  id                String              @id
+  nombre            String?
+  srcImage          String?
+  estado            Boolean
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  vehiculo_servicio vehiculo_servicio[]
+}
+
+model turno {
+  id                 String            @id
+  vehiculoServicioId String
+  userId             String
+  horarioReservado   DateTime
+  precioCongelado    Decimal
+  seniaCongelada     Decimal
+  patente            String
+  estado             Boolean
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime
+  user               user              @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Turno_userId_fkey")
+  vehiculo_servicio  vehiculo_servicio @relation(fields: [vehiculoServicioId], references: [id], onDelete: Cascade, map: "Turno_vehiculoServicioId_fkey")
+
+  @@index([userId], map: "Turno_userId_fkey")
+  @@index([vehiculoServicioId], map: "Turno_vehiculoServicioId_fkey")
+}
+
+model user {
+  id            String    @id
+  name          String?
+  email         String    @unique(map: "User_email_key")
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          user_role @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  account       account[]
+  turno         turno[]
+}
+
+model vehiculo {
+  id                String              @id
+  nombre            String?
+  srcImage          String?
+  estado            Boolean
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime
+  vehiculo_servicio vehiculo_servicio[]
+}
+
+model vehiculo_servicio {
+  id         String   @id
+  vehiculoId String
+  servicioId String
+  duracion   Int
+  precio     Decimal
+  descuento  Decimal
+  senia      Decimal
+  estado     Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  turno      turno[]
+  servicio   servicio @relation(fields: [servicioId], references: [id], onDelete: Cascade, map: "Vehiculo_Servicio_servicioId_fkey")
+  vehiculo   vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade, map: "Vehiculo_Servicio_vehiculoId_fkey")
+
+  @@index([servicioId], map: "Vehiculo_Servicio_servicioId_fkey")
+  @@index([vehiculoId], map: "Vehiculo_Servicio_vehiculoId_fkey")
+}
+
+enum user_role {
   USER
   ADMIN
 }
