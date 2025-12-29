@@ -1,8 +1,9 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Sparkles, Clock, Shield } from "lucide-react";
+import { Sparkles, Clock, Shield} from "lucide-react";
 import heroImage from "@/assets/hero-carwash.jpg";
+import Link from "next/link";
 import Image from "next/image";
 
 interface HeroProps {
@@ -19,8 +20,8 @@ export function Hero({ onBookingClick }: HeroProps) {
           alt="Lavado profesional de vehículos"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-black/0" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-r from-black via-black/40 to-black/0" />
+        <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent" />
       </div>
 
       <div className="container relative z-10 pt-20">
@@ -51,11 +52,11 @@ export function Hero({ onBookingClick }: HeroProps) {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="flex flex-col sm:flex-row gap-4 mb-12"
           >
-            <Button variant="hero" onClick={onBookingClick}>
+            <Button variant="celeste" size="lg" onClick={onBookingClick}>
               Reservar Turno Ahora
             </Button>
-            <Button variant="outline-celeste" size="lg" asChild>
-              <a href="#servicios">Ver Servicios</a>
+            <Button variant="blanco" asChild>
+              <Link href="#servicios">Ver Servicios</Link>
             </Button>
           </motion.div>
 
