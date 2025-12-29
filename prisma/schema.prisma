@@ -1,11 +1,11 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
-  relationMode = "prisma"
 }
 
 datasource db {
   provider = "mysql"
+  relationMode = "prisma"
 }
 
 model account {
