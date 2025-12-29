@@ -66,7 +66,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-md bg-card border border-border rounded-2xl shadow-elevated overflow-hidden"
+            className="w-full max-w-md bg-white border border-border rounded-2xl shadow-elevated overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -104,21 +104,22 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                     </div>
                     <div className="grid grid-cols-3 gap-3">
                       {vehicleTypes.map((type) => (
-                        <button
+                        <Button
                           key={type.id}
                           onClick={() => {
                             setFormData({ ...formData, vehicleType: type.id });
                             setStep(2);
                           }}
-                          className={`p-4 rounded-xl border-2 transition-all hover:border-primary/50 ${
+                          variant={`${
                             formData.vehicleType === type.id
-                              ? "border-primary bg-primary/10"
-                              : "border-border bg-secondary/50"
+                              ? "celeste"
+                              : "blanco"
                           }`}
+                          className={`p-4 rounded-xl border-2`}
                         >
                           <span className="text-3xl block mb-2">{type.icon}</span>
                           <span className="text-sm font-medium text-foreground">{type.label}</span>
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </motion.div>
@@ -155,17 +156,18 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                       </label>
                       <div className="grid grid-cols-5 gap-2">
                         {timeSlots.map((time) => (
-                          <button
+                          <Button
                             key={time}
-                            onClick={() => setFormData({ ...formData, time })}
-                            className={`p-2 rounded-lg text-sm font-medium transition-all ${
+                            variant={`${
                               formData.time === time
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-secondary border border-border text-foreground hover:border-primary/50"
+                                ? "celeste"
+                                : "blanco"
                             }`}
-                          >
+                            size="sm"
+                            onClick={() => setFormData({ ...formData, time })}
+                            className={`p-2 rounded-lg text-sm font-medium transition-all`}>
                             {time}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </div>
