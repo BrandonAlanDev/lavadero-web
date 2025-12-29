@@ -23,7 +23,7 @@ export const getVehiculos = async (): Promise<ActionState> => {
                 }
             },
             orderBy: {
-                cratedAt: 'desc'
+                createdAt: 'desc'
             }
         });
 

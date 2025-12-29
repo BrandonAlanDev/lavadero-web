@@ -23,7 +23,7 @@ export const getServicios = async (): Promise<ActionState> => {
                 }
             },
             orderBy: {
-                cratedAt: 'desc'
+                createdAt: 'desc'
             }
         });
 
