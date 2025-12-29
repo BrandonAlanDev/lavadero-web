@@ -14,7 +14,7 @@ const buttonVariants = cva(
         outline: "cursor-pointer border border-border bg-transparent hover:bg-secondary hover:text-secondary-foreground",
         secondary: "cursor-pointer bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "cursor-pointer hover:bg-secondary hover:text-secondary-foreground",
-        link: "cursor-pointer text-primary underline-offset-4 hover:underline",
+        link: "cursor-pointer text-primary underline-offset-4 hover:underline font-bold hover:text-[hsl(210,30%,20%)]",
         celeste: "cursor-pointer bg-gradient-to-r from-[hsl(195,45%,65%)] to-[hsl(195,50%,75%)] text-[hsl(210,30%,20%)] font-semibold shadow-[0_4px_30px_-5px_hsl(195_45%_65%_/_0.3)] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
         rojo: "cursor-pointer bg-gradient-to-r from-[hsl(0,75%,70%)] to-[hsl(0,85%,80%)] text-[hsl(0,40%,20%)] font-semibold shadow-[0_4px_30px_-5px_hsl(0_75%_70%_/_0.3)] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
         verde: "cursor-pointer bg-gradient-to-r from-[hsl(145,45%,65%)] to-[hsl(145,50%,75%)] text-[hsl(145,40%,20%)] font-semibold shadow-[0_4px_30px_-5px_hsl(145_45%_65%_/_0.3)] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
