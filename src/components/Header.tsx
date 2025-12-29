@@ -28,15 +28,21 @@ export function Header({ session }: HeaderProps) {
         
         <nav className="hidden md:flex items-center gap-8">
           <Link href="#servicios" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Servicios
+            <Button variant="link" size="sm" onClick={onOpen}>
+              Servicios
+            </Button>
           </Link>
 
           <Link href="#nosotros" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Nosotros
+            <Button variant="link" size="sm" onClick={onOpen}>
+              Nosotros
+            </Button>
           </Link>
 
           <Link href="#ubicacion" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Ubicación
+            <Button variant="link" size="sm" onClick={onOpen}>
+              Ubicación
+            </Button>
           </Link>
 
           <Link href="" className="cursor-pointer">
