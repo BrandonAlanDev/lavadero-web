@@ -48,9 +48,9 @@ export function Header({ session }: HeaderProps) {
 
         {session ? (
           <div className="flex items-center gap-4">
-            <span className="text-sm">Hola, {session.user?.name}</span>
+            <span className="text-sm">Hola, <Link href="/dashboard"><Button variant="link" size="sm">{session.user?.name}</Button></Link></span>
             <form action={handleSignOut}>
-              <button type="submit" className="text-white text-sm cursor-pointer"><Button variant="celeste" size="sm">Salir</Button></button>
+              <Button variant="celeste" size="sm" type="submit">Salir</Button>
             </form>
           </div>
         ) : (
