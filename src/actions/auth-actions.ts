@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { registerSchema, loginSchema } from "@/lib/zod"; // Asegúrate de importar loginSchema
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
+import { signOut } from "@/auth";
+
+export async function handleSignOut() {
+  await signOut({ redirectTo: "/" });
+}
 
 // Definimos el tipo de respuesta para mantener consistencia
 export type ActionState = {
