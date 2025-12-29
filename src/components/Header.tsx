@@ -28,15 +28,21 @@ export function Header({ session }: HeaderProps) {
         
         <nav className="hidden md:flex items-center gap-8">
           <Link href="#servicios" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Servicios
+            <Button variant="link" size="sm" onClick={onOpen}>
+              Servicios
+            </Button>
           </Link>
 
           <Link href="#nosotros" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Nosotros
+            <Button variant="link" size="sm" onClick={onOpen}>
+              Nosotros
+            </Button>
           </Link>
 
           <Link href="#ubicacion" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Ubicación
+            <Button variant="link" size="sm" onClick={onOpen}>
+              Ubicación
+            </Button>
           </Link>
 
           <Link href="" className="cursor-pointer">
@@ -48,9 +54,9 @@ export function Header({ session }: HeaderProps) {
 
         {session ? (
           <div className="flex items-center gap-4">
-            <span className="text-sm">Hola, {session.user?.name}</span>
+            <span className="text-sm">Hola, <Link href="/dashboard"><Button variant="link" size="sm">{session.user?.name}</Button></Link></span>
             <form action={handleSignOut}>
-              <button type="submit" className="text-white text-sm cursor-pointer"><Button variant="celeste" size="sm">Salir</Button></button>
+              <Button variant="celeste" size="sm" type="submit">Salir</Button>
             </form>
           </div>
         ) : (
