@@ -1,6 +1,7 @@
+"use server";
+
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { da } from "zod/v4/locales";
 
 // Definimos el tipo de respuesta para mantener consistencia
 export type ActionState = {
@@ -9,7 +10,11 @@ export type ActionState = {
     data?: any;
 };
 
-export async function createVehiculoXServicio(formData: FormData): Promise<ActionState> {
+export async function createVehiculoXServicio(
+    prevState: ActionState,  // ← AGREGADO
+    formData: FormData
+): Promise<ActionState> {
+    
     try {
         const id_vehiculo = formData.get("id_vehiculo");
         const id_servicio = formData.get("id_servicio");
@@ -18,8 +23,23 @@ export async function createVehiculoXServicio(formData: FormData): Promise<Actio
         const descuento = formData.get("descuento");
         const senia = formData.get("senia");
 
+        // Validaciones
+        if (!id_vehiculo || !id_servicio) {
+            return {
+                error: "Vehículo y servicio son requeridos",
+                success: false
+            };
+        }
+
+        if (!duracionMinutos || !precio) {
+            return {
+                error: "Duración y precio son requeridos",
+                success: false
+            };
+        }
+
         const data = {
-            id: crypto.randomUUID(), // Generar ID único
+            id: crypto.randomUUID(),
             vehiculoId: String(id_vehiculo),
             servicioId: String(id_servicio),
             duracion: Number(duracionMinutos),
@@ -27,12 +47,15 @@ export async function createVehiculoXServicio(formData: FormData): Promise<Actio
             descuento: Number(descuento || 0),
             senia: Number(senia || 0),
             estado: true,
+            createdAt: new Date(),
             updatedAt: new Date()
         };
 
         const vehiculoServicio = await prisma.vehiculo_servicio.create({ data });
 
-        revalidatePath("/vehiculoServicio");
+        console.log("✅ Vehículo x Servicio creado exitosamente");
+
+        revalidatePath("/vehiculoXServicio");
 
         return {
             success: true,
@@ -40,84 +63,39 @@ export async function createVehiculoXServicio(formData: FormData): Promise<Actio
         };
 
     } catch (error) {
-        console.error("Error al crear vehiculo_servicio:", error);
+        console.error("❌ ERROR createVehiculoXServicio:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
         };
     }
 }
-export async function obtenerVehiculoXServicio(params?: {
-    search?: string;
-    orderBy?: "vehiculo" | "servicio" | "precio" | "createdAt";
-    orderDir?: "asc" | "desc";
-}) {
-    const where = params?.search
-        ? {
-            OR: [
-                {
-                    vehiculo: {
-                        nombre: {
-                            contains: params.search,
-                        }
-                    }
-                },
-                {
-                    servicio: {
-                        nombre: {
-                            contains: params.search,
-                        }
-                    }
-                }
-            ]
-        }
-        : undefined;
-
-    const vehiculosXServicios = await prisma.vehiculo_servicio.findMany({
-        where,
-        orderBy: params?.orderBy
-            ? params.orderBy === "vehiculo" || params.orderBy === "servicio"
-                ? { [params.orderBy]: { nombre: params.orderDir ?? "asc" } }
-                : { [params.orderBy]: params.orderDir ?? "asc" }
-            : { createdAt: "desc" },
-        include: {
-            vehiculo: {
-                select: {
-                    id: true,
-                    nombre: true,
-                    srcImage: true
-                }
-            },
-            servicio: {
-                select: {
-                    id: true,
-                    nombre: true,
-                    srcImage: true
-                }
-            }
-        }
-    });
-
-    return vehiculosXServicios;
-}
 
 export async function actualizarVehiculoXServicio(
+    prevState: ActionState,
     formData: FormData
 ): Promise<ActionState> {
+  
     try {
         const id = formData.get("id");
         
+        if (!id) {
+            return {
+                error: "ID no proporcionado",
+                success: false
+            };
+        }
+
         const data = {
             vehiculoId: String(formData.get("id_vehiculo")),
-            servicioId: String(formData.get("servicioId")),
+            servicioId: String(formData.get("id_servicio")),
             duracion: Number(formData.get("duracionMinutos")),
             precio: Number(formData.get("precio")),
             descuento: Number(formData.get("descuento") || 0),
             senia: Number(formData.get("senia") || 0),
-            updatedAt: new Date() // Actualizar timestamp
+            updatedAt: new Date()
         };
 
-        // Verificar que el registro existe antes de actualizar
         const existe = await prisma.vehiculo_servicio.findUnique({
             where: { id: String(id) }
         });
@@ -134,6 +112,8 @@ export async function actualizarVehiculoXServicio(
             data
         });
 
+        console.log("✅ Vehículo x Servicio actualizado exitosamente");
+
         revalidatePath("/vehiculoXServicio");
 
         return {
@@ -142,9 +122,135 @@ export async function actualizarVehiculoXServicio(
         };
 
     } catch (error) {
-        console.error("Error al actualizar vehiculo_servicio:", error);
+        console.error("❌ ERROR actualizarVehiculoXServicio:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
+            success: false
+        };
+    }
+}
+
+export async function deleteVehiculoXServicio(
+    prevState: ActionState,
+    formData: FormData
+): Promise<ActionState> {
+    console.log("=== INICIO deleteVehiculoXServicio ===");
+    
+    try {
+        const id = formData.get("id");
+      
+        const existe = await prisma.vehiculo_servicio.findUnique({
+            where: { id: String(id) },
+            include: {
+                turno: true
+            }
+        });
+
+        if (!existe) {
+            return {
+                error: "Vehículo x Servicio no encontrado",
+                success: false
+            };
+        }
+
+        // Verificar si tiene turnos asociados
+        if (existe.turno.length > 0) {
+            return {
+                error: "No se puede eliminar: tiene turnos asociados",
+                success: false
+            };
+        }
+
+        await prisma.vehiculo_servicio.update({
+            where: { id: String(id) },
+            data: {
+                estado: false,
+                updatedAt: new Date()
+            }
+        });
+
+        console.log("✅ Vehículo x Servicio dado de baja");
+
+        revalidatePath("/vehiculoXServicio");
+
+        return {
+            success: true,
+            data: { id }
+        };
+
+    } catch (error) {
+        console.error("❌ ERROR deleteVehiculoXServicio:", error);
+        return {
+            error: error instanceof Error ? error.message : "Error desconocido",
+            success: false
+        };
+    }
+}
+
+// Función para obtener vehículos y servicios disponibles
+export async function obtenerVehiculosXServicios(params?: {
+    search?: string;
+    orderBy?: "vehiculo" | "servicio" | "precio" | "createdAt";
+    orderDir?: "asc" | "desc";
+}): Promise<ActionState> {
+    try {
+        const where = params?.search
+            ? {
+                estado: true, // Solo activos
+                OR: [
+                    {
+                        vehiculo: {
+                            nombre: {
+                                contains: params.search,
+                            }
+                        }
+                    },
+                    {
+                        servicio: {
+                            nombre: {
+                                contains: params.search,
+                            }
+                        }
+                    }
+                ]
+            }
+            : { estado: true }; // ← CORREGIDO: antes no tenía esto cuando no había búsqueda
+
+        const vehiculosXServicios = await prisma.vehiculo_servicio.findMany({
+            where,
+            orderBy: params?.orderBy
+                ? params.orderBy === "vehiculo" || params.orderBy === "servicio"
+                    ? { [params.orderBy]: { nombre: params.orderDir ?? "asc" } }
+                    : { [params.orderBy]: params.orderDir ?? "asc" }
+                : { createdAt: "desc" },
+            include: {
+                vehiculo: {
+                    select: {
+                        id: true,
+                        nombre: true,
+                        srcImage: true
+                    }
+                },
+                servicio: {
+                    select: {
+                        id: true,
+                        nombre: true,
+                        srcImage: true
+                    }
+                }
+            }
+        });
+
+        console.log("✅ Obtenidos", vehiculosXServicios.length, "vehículos x servicios");
+
+        return {
+            success: true,
+            data: vehiculosXServicios  // ← Esto debe ser un array de vehiculo_servicio
+        };
+    } catch (error) {
+        console.error("❌ ERROR obtenerVehiculoXServicio:", error);
+        return {
+            error: "Error al obtener los vehículos x servicios",
             success: false
         };
     }

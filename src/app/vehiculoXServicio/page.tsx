@@ -20,17 +20,13 @@ export default async function VehiculoXServicioPage() {
             </div>
 
             <Suspense fallback={<LoadingSkeleton />}>
-                {result.success && result.data && Array.isArray(result.data) ? (
+                {result.success && result.data ? (
                     <VehiculoXServicioList items={result.data} />
                 ) : (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <p className="text-red-600">
                             {result.error || "Error al cargar las configuraciones"}
                         </p>
-                        {/* Debug info */}
-                        <pre className="text-xs mt-2 text-gray-500">
-                            {JSON.stringify(result, null, 2)}
-                        </pre>
                     </div>
                 )}
             </Suspense>
