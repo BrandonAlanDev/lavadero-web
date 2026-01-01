@@ -77,6 +77,7 @@ model user {
   emailVerified DateTime?
   image         String?
   password      String?
+  telefono      String?
   role          user_role @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
