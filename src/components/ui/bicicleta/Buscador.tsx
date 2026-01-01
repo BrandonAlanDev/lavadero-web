@@ -1,20 +1,16 @@
+import { Button } from "../button";
 export default function Buscador() {
   return (
     <section className="space-y-1">
-      <h2 className="font-semibold">🔍 Buscador</h2>
-      <small className="text-gray-500">
-        Usa searchParams → filtra en Prisma con contains
-      </small>
-
-      <form className="flex gap-2">
+      <form className="flex justify-between gap-2 w-lg border-2 border-primary bg-white/90 p-2 rounded-2xl">
         <input
           name="search"
-          placeholder="Buscar por marca, modelo o color"
-          className="border px-2 py-1 rounded w-64"
+          placeholder="🔍 Buscar..."
+          className="px-2 py-1 rounded w-full border border-white/90"
         />
-        <button className="bg-blue-600 text-white px-3 rounded">
+        <Button variant={'celeste'} className="px-3 rounded">
           Buscar
-        </button>
+        </Button>
       </form>
     </section>
   );
