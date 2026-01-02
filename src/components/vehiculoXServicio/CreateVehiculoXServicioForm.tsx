@@ -1,6 +1,6 @@
 "use client";
 
-import { createVehiculoXServicio, obtenerVehiculosXServicios } from "@/actions/vehiculoXServicio-actions";
+import { createVehiculoXServicio, obtenerVehiculosYServicios } from "@/actions/vehiculoXServicio-actions";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
@@ -27,15 +27,27 @@ export default function CreateVehiculoXServicioForm() {
     const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
     const [servicios, setServicios] = useState<Servicio[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         async function cargarDatos() {
-            const result = await obtenerVehiculosXServicios();
-            if (result.success && result.data) {
-                setVehiculos(result.data.vehiculos);
-                setServicios(result.data.servicios);
+            try {
+                const result = await obtenerVehiculosYServicios();
+                console.log("📦 Resultado de obtenerVehiculosYServicios:", result);
+                
+                if (result.success && result.data) {
+                    // Asegurar que sean arrays
+                    setVehiculos(Array.isArray(result.data.vehiculos) ? result.data.vehiculos : []);
+                    setServicios(Array.isArray(result.data.servicios) ? result.data.servicios : []);
+                } else {
+                    setError(result.error || "Error al cargar datos");
+                }
+            } catch (err) {
+                console.error("❌ Error al cargar vehículos y servicios:", err);
+                setError("Error al cargar datos");
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         }
         cargarDatos();
     }, []);
@@ -53,7 +65,37 @@ export default function CreateVehiculoXServicioForm() {
     if (loading) {
         return (
             <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-500">Cargando...</p>
+                <p className="text-gray-500">Cargando vehículos y servicios...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                <p className="text-red-600 font-medium mb-2">{error}</p>
+                <button 
+                    onClick={() => window.location.reload()}
+                    className="text-sm text-blue-600 hover:underline"
+                >
+                    Intentar de nuevo
+                </button>
+            </div>
+        );
+    }
+
+    if (vehiculos.length === 0 || servicios.length === 0) {
+        return (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <p className="text-yellow-800 font-medium mb-2">⚠️ No hay datos disponibles</p>
+                <div className="text-yellow-700 text-sm space-y-1">
+                    {vehiculos.length === 0 && (
+                        <p>• No hay vehículos creados. <a href="/vehiculo" className="underline">Crear vehículos</a></p>
+                    )}
+                    {servicios.length === 0 && (
+                        <p>• No hay servicios creados. <a href="/servicio" className="underline">Crear servicios</a></p>
+                    )}
+                </div>
             </div>
         );
     }

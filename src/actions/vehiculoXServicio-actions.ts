@@ -187,7 +187,7 @@ export async function deleteVehiculoXServicio(
     }
 }
 
-// Función para obtener vehículos y servicios disponibles
+// FUNCIÓN CORRECTA: Para obtener las CONFIGURACIONES (vehículo x servicio)
 export async function obtenerVehiculosXServicios(params?: {
     search?: string;
     orderBy?: "vehiculo" | "servicio" | "precio" | "createdAt";
@@ -196,7 +196,7 @@ export async function obtenerVehiculosXServicios(params?: {
     try {
         const where = params?.search
             ? {
-                estado: true, // Solo activos
+                estado: true,
                 OR: [
                     {
                         vehiculo: {
@@ -214,7 +214,7 @@ export async function obtenerVehiculosXServicios(params?: {
                     }
                 ]
             }
-            : { estado: true }; // ← CORREGIDO: antes no tenía esto cuando no había búsqueda
+            : { estado: true };
 
         const vehiculosXServicios = await prisma.vehiculo_servicio.findMany({
             where,
@@ -241,16 +241,47 @@ export async function obtenerVehiculosXServicios(params?: {
             }
         });
 
-        console.log("✅ Obtenidos", vehiculosXServicios.length, "vehículos x servicios");
+        console.log("✅ Obtenidas", vehiculosXServicios.length, "configuraciones");
 
         return {
             success: true,
-            data: vehiculosXServicios  // ← Esto debe ser un array de vehiculo_servicio
+            data: vehiculosXServicios  // ← ARRAY de configuraciones
         };
     } catch (error) {
-        console.error("❌ ERROR obtenerVehiculoXServicio:", error);
+        console.error("❌ ERROR obtenerVehiculosXServicios:", error);
         return {
-            error: "Error al obtener los vehículos x servicios",
+            error: "Error al obtener las configuraciones",
+            success: false
+        };
+    }
+}
+
+// FUNCIÓN PARA DROPDOWNS: Para obtener listas de vehículos y servicios
+export async function obtenerVehiculosYServicios(): Promise<ActionState> {
+    try {
+        const [vehiculos, servicios] = await Promise.all([
+            prisma.vehiculo.findMany({
+                where: { estado: true },
+                select: { id: true, nombre: true },
+                orderBy: { nombre: 'asc' }
+            }),
+            prisma.servicio.findMany({
+                where: { estado: true },
+                select: { id: true, nombre: true },
+                orderBy: { nombre: 'asc' }
+            })
+        ]);
+
+        console.log("✅ Obtenidos:", vehiculos.length, "vehículos y", servicios.length, "servicios");
+
+        return {
+            success: true,
+            data: { vehiculos, servicios }  // ← OBJETO con dos arrays
+        };
+    } catch (error) {
+        console.error("❌ ERROR obtenerVehiculosYServicios:", error);
+        return {
+            error: "Error al obtener vehículos y servicios",
             success: false
         };
     }
