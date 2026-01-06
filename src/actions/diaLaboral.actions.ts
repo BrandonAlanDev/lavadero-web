@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { promises } from "node:dns";
 
 
 export type ActionState = {
@@ -69,3 +68,4 @@ export async function getDias(): Promise<ActionState> {
         }
     }
 }
+
