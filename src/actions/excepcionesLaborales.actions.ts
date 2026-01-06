@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma";
+import { promises } from "dns";
 import { revalidatePath } from "next/cache";
 
 export type ActionState = {
@@ -28,10 +29,10 @@ export async function create(
         revalidatePath("/excepciones");
         return {
             success: true,
-            data: excepcion 
+            data: excepcion
         };
     } catch (error) {
-        console.error("Error al crear excepción:", error); 
+        console.error("Error al crear excepción:", error);
         return {
             error: "Error al crear la excepción laboral",
             success: false
@@ -52,10 +53,64 @@ export async function getExcepciones(): Promise<ActionState> {
             data: excepciones
         }
     } catch (error) {
-        console.error("Error al obtener excepciones:", error); 
+        console.error("Error al obtener excepciones:", error);
         return {
             error: "Error al obtener las excepciones laborales",
             success: false
         }
+    }
+}
+
+export async function update(
+    prevState: ActionState,
+    formData: FormData
+): Promise<ActionState> {
+    try {
+        const id = formData.get("id") as string;
+
+        const excepcion = await prisma.expeciones_laborales.update({
+            where: { id },
+            data: {
+                motivo: formData.get("motivo") as string,
+                desde: new Date(formData.get("desde") as string),
+                hasta: new Date(formData.get("hasta") as string),
+                updatedAt: new Date()
+            }
+        });
+
+        revalidatePath("/excepciones");
+        return excepcion;
+    } catch (error) {
+        console.error("Error al actualizar excepción:", error);
+        return {
+            error: "Error al actualizar la excepción laboral",
+            success: false
+        };
+    }
+}
+
+// cambiar estado a false en lugar de eliminar
+export async function softDeleteExcepcion(id: string): Promise<ActionState> {
+    try {
+       
+        const excepcion = await prisma.expeciones_laborales.update({
+            where: { id },
+            data: {
+                estado: false,
+                updatedAt: new Date()
+            }
+        });
+
+        revalidatePath("/excepciones");
+        return {
+            success: true,
+            data: excepcion
+        };
+    } catch (error) {
+        console.error("Error al desactivar excepción:", error);
+        return {
+            error: "Error al desactivar la excepción laboral",
+            success: false
+        };
     }
 }
