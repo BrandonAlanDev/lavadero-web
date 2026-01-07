@@ -27,21 +27,6 @@ model account {
   @@index([userId])
 }
 
-// Modelo Bicicleta DE EJEMPLO
-model Bicicleta {
-  id       Int      @id @default(autoincrement())
-  marca    String
-  modelo   String
-  rodado   Int
-  color    String?
-  creadaEn DateTime @default(now())
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-
 model servicio {
   id                String              @id
   nombre            String?
@@ -77,10 +62,10 @@ model user {
   emailVerified DateTime?
   image         String?
   password      String?
-  telefono      String?
   role          user_role @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  telefono      String?
   account       account[]
   turno         turno[]
 }
@@ -125,27 +110,34 @@ model expeciones_laborales {
 }
 
 model dia_laboral {
-  id        String   @id @default(cuid())
-  dia       Int
+  id        String               @id @default(cuid())
   estado    Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  margenes margenes_laborales[]
+  dia       Int
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  margenes  margenes_laborales[]
 }
 
 model margenes_laborales {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   diaId     String
-  desde     DateTime
-  hasta     DateTime
   estado    Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  dia dia_laboral @relation(fields: [diaId], references: [id], onDelete: Cascade)
+  desde     DateTime    @db.DateTime(0)
+  hasta     DateTime    @db.DateTime(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  dia       dia_laboral @relation(fields: [diaId], references: [id], onDelete: Cascade)
 
   @@index([diaId])
+}
+
+model bicicleta {
+  id       Int      @id @default(autoincrement())
+  marca    String
+  modelo   String
+  rodado   Int
+  color    String?
+  creadaEn DateTime @default(now())
 }
 
 enum user_role {

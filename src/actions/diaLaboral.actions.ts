@@ -58,6 +58,7 @@ export async function getDias(): Promise<ActionState> {
         })
 
         return {
+            
             success: true,
             data: dias
         }
@@ -68,4 +69,5 @@ export async function getDias(): Promise<ActionState> {
         }
     }
 }
+
 

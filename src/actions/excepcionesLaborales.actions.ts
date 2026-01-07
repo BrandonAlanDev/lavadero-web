@@ -1,7 +1,6 @@
 "use server"
 
 import { prisma } from "@/lib/prisma";
-import { promises } from "dns";
 import { revalidatePath } from "next/cache";
 
 export type ActionState = {
@@ -17,6 +16,7 @@ export async function create(
     try {
         const excepcion = await prisma.expeciones_laborales.create({
             data: {
+                id: crypto.randomUUID(),
                 motivo: formData.get("motivo") as string,
                 desde: new Date(formData.get("desde") as string),
                 hasta: new Date(formData.get("hasta") as string),
@@ -79,7 +79,9 @@ export async function update(
         });
 
         revalidatePath("/excepciones");
-        return excepcion;
+        return {
+            success: true,
+            data: excepcion};
     } catch (error) {
         console.error("Error al actualizar excepción:", error);
         return {
@@ -110,6 +112,33 @@ export async function softDeleteExcepcion(id: string): Promise<ActionState> {
         console.error("Error al desactivar excepción:", error);
         return {
             error: "Error al desactivar la excepción laboral",
+            success: false
+        };
+    }
+}
+
+export async function deleteExcepcion(id: string): Promise<ActionState> {
+    try {
+        if (!id) {
+            return {
+                error: "ID de excepción no proporcionado",
+                success: false
+            };
+        }
+
+        await prisma.expeciones_laborales.delete({
+            where: { id }
+        });
+
+        revalidatePath("/excepcionesLaborales");
+        return {
+            success: true,
+            data: { id }
+        };
+    } catch (error) {
+        console.error("Error al eliminar excepción:", error);
+        return {
+            error: "Error al eliminar la excepción laboral",
             success: false
         };
     }
