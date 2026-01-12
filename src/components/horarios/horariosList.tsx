@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MargenLaboralForm } from "@components/diaLaboral/horariosForm";
+import { MargenLaboralForm } from "./horariosForm";
 
 type MargenLaboral = {
   id: string;
