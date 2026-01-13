@@ -11,15 +11,15 @@ export default function HomeClient() {
   const { onOpen } = useBooking();
 
   return (
-    <div className="min-h-screen bg-background justify-center items-center">
-      <main>
-        <Hero onBookingClick={onOpen} />
-        <ImageCarousel />
-        <AboutSection />
-        <LocationSection />
-      </main>
+      <div className="min-h-screen bg-background justify-center items-center mx-auto">
+        <main>
+          <Hero onBookingClick={onOpen} />
+          <ImageCarousel />
+          <AboutSection />
+          <LocationSection />
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
   );
 }
