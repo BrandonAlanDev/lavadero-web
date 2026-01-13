@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-// Definimos el tipo de respuesta para mantener consistencia
 export type ActionState = {
     error?: string;
     success?: boolean;
@@ -11,7 +10,7 @@ export type ActionState = {
 };
 
 export async function createVehiculoXServicio(
-    prevState: ActionState,  // ← AGREGADO
+    prevState: ActionState,
     formData: FormData
 ): Promise<ActionState> {
     
@@ -53,8 +52,6 @@ export async function createVehiculoXServicio(
 
         const vehiculoServicio = await prisma.vehiculo_servicio.create({ data });
 
-        console.log("✅ Vehículo x Servicio creado exitosamente");
-
         revalidatePath("/vehiculoXServicio");
 
         return {
@@ -63,7 +60,6 @@ export async function createVehiculoXServicio(
         };
 
     } catch (error) {
-        console.error("❌ ERROR createVehiculoXServicio:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
@@ -112,8 +108,6 @@ export async function actualizarVehiculoXServicio(
             data
         });
 
-        console.log("✅ Vehículo x Servicio actualizado exitosamente");
-
         revalidatePath("/vehiculoXServicio");
 
         return {
@@ -122,7 +116,6 @@ export async function actualizarVehiculoXServicio(
         };
 
     } catch (error) {
-        console.error("❌ ERROR actualizarVehiculoXServicio:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
@@ -133,9 +126,7 @@ export async function actualizarVehiculoXServicio(
 export async function deleteVehiculoXServicio(
     prevState: ActionState,
     formData: FormData
-): Promise<ActionState> {
-    console.log("=== INICIO deleteVehiculoXServicio ===");
-    
+): Promise<ActionState> {    
     try {
         const id = formData.get("id");
       
@@ -169,8 +160,6 @@ export async function deleteVehiculoXServicio(
             }
         });
 
-        console.log("✅ Vehículo x Servicio dado de baja");
-
         revalidatePath("/vehiculoXServicio");
 
         return {
@@ -179,7 +168,6 @@ export async function deleteVehiculoXServicio(
         };
 
     } catch (error) {
-        console.error("❌ ERROR deleteVehiculoXServicio:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
@@ -240,15 +228,11 @@ export async function obtenerVehiculosXServicios(params?: {
                 }
             }
         });
-
-        console.log("✅ Obtenidas", vehiculosXServicios.length, "configuraciones");
-
         return {
             success: true,
             data: vehiculosXServicios  // ← ARRAY de configuraciones
         };
     } catch (error) {
-        console.error("❌ ERROR obtenerVehiculosXServicios:", error);
         return {
             error: "Error al obtener las configuraciones",
             success: false
@@ -272,14 +256,11 @@ export async function obtenerVehiculosYServicios(): Promise<ActionState> {
             })
         ]);
 
-        console.log("✅ Obtenidos:", vehiculos.length, "vehículos y", servicios.length, "servicios");
-
         return {
             success: true,
             data: { vehiculos, servicios }  // ← OBJETO con dos arrays
         };
     } catch (error) {
-        console.error("❌ ERROR obtenerVehiculosYServicios:", error);
         return {
             error: "Error al obtener vehículos y servicios",
             success: false

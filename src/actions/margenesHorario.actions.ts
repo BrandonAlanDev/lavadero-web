@@ -66,34 +66,11 @@ export async function createMargenLaboral(
     const desde = formData.get("desde") as string;
     const hasta = formData.get("hasta") as string;
 
-    // Validaciones
-    if (!diaId) {
-      return {
-        success: false,
-        error: "El día laboral es requerido",
-      };
-    }
-
-    if (!desde || !hasta) {
-      return {
-        success: false,
-        error: "Las horas desde y hasta son requeridas",
-      };
-    }
-
-    // Validar formato de hora
-    if (!validarFormatoHora(desde) || !validarFormatoHora(hasta)) {
-      return {
-        success: false,
-        error: "Formato de hora inválido. Use HH:mm",
-      };
-    }
-
     // Validar que 'hasta' sea mayor que 'desde'
     if (compararHoras(hasta, desde) <= 0) {
       return {
         success: false,
-        error: "La hora 'hasta' debe ser mayor que la hora 'desde'",
+        error: "La hora 'Cierre' debe ser mayor que la hora 'Apertura'",
       };
     }
 
@@ -101,13 +78,6 @@ export async function createMargenLaboral(
     const diaLaboral = await prisma.dia_laboral.findUnique({
       where: { id: diaId },
     });
-
-    if (!diaLaboral) {
-      return {
-        success: false,
-        error: "Día laboral no encontrado",
-      };
-    }
 
     // Obtener todos los márgenes del día para verificar solapamientos
     const margenesExistentes = await prisma.margenes_laborales.findMany({
@@ -161,34 +131,11 @@ export async function updateMargenLaboral(
     const desde = formData.get("desde") as string;
     const hasta = formData.get("hasta") as string;
 
-    // Validaciones
-    if (!id) {
-      return {
-        success: false,
-        error: "ID es requerido",
-      };
-    }
-
-    if (!desde || !hasta) {
-      return {
-        success: false,
-        error: "Las horas desde y hasta son requeridas",
-      };
-    }
-
-    // Validar formato de hora
-    if (!validarFormatoHora(desde) || !validarFormatoHora(hasta)) {
-      return {
-        success: false,
-        error: "Formato de hora inválido. Use HH:mm",
-      };
-    }
-
     // Validar que 'hasta' sea mayor que 'desde'
     if (compararHoras(hasta, desde) <= 0) {
       return {
         success: false,
-        error: "La hora 'hasta' debe ser mayor que la hora 'desde'",
+        error: "La hora 'Cierre' debe ser mayor que la hora 'Apertura'",
       };
     }
 
@@ -251,23 +198,6 @@ export async function updateMargenLaboral(
 // Eliminar margen laboral
 export async function deleteMargenLaboral(id: string): Promise<ActionState> {
   try {
-    if (!id) {
-      return {
-        success: false,
-        error: "ID es requerido",
-      };
-    }
-
-    const existing = await prisma.margenes_laborales.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      return {
-        success: false,
-        error: "Margen laboral no encontrado",
-      };
-    }
 
     await prisma.margenes_laborales.delete({
       where: { id },
