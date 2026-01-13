@@ -77,7 +77,7 @@ export const getVehiculos = async (): Promise<ActionState> => {
 export const createVehiculo = async (prevState: ActionState, formData: FormData): Promise<ActionState> => {    
     try {
         const nombre = formData.get('nombre') as string;
-        const srcImageRaw = formData.get('srcImage') as string; // ← CORREGIDO: era scrImage
+        const srcImageRaw = formData.get('srcImage') as string;
         const estadoValue = formData.get('estado');
 
         if (!nombre || nombre.trim() === '') {
