@@ -9,6 +9,52 @@ export type ActionState = {
   error?: string;
 };
 
+/**
+ * Valida formato de hora HH:mm
+ */
+function validarFormatoHora(hora: string): boolean {
+  const regex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return regex.test(hora);
+}
+
+/**
+ * Compara dos horas en formato HH:mm
+ * Retorna: -1 si hora1 < hora2, 0 si son iguales, 1 si hora1 > hora2
+ */
+function compararHoras(hora1: string, hora2: string): number {
+  const [h1, m1] = hora1.split(":").map(Number);
+  const [h2, m2] = hora2.split(":").map(Number);
+  
+  const minutos1 = h1 * 60 + m1;
+  const minutos2 = h2 * 60 + m2;
+  
+  if (minutos1 < minutos2) return -1;
+  if (minutos1 > minutos2) return 1;
+  return 0;
+}
+
+/**
+ * Verifica si dos rangos de horarios se solapan
+ */
+function horariosSeSuperponen(
+  desde1: string,
+  hasta1: string,
+  desde2: string,
+  hasta2: string
+): boolean {
+  // Rango 1: [desde1, hasta1]
+  // Rango 2: [desde2, hasta2]
+  
+  // No se superponen si:
+  // - hasta1 <= desde2 (rango 1 termina antes que empiece rango 2)
+  // - hasta2 <= desde1 (rango 2 termina antes que empiece rango 1)
+  
+  const hasta1LeDesde2 = compararHoras(hasta1, desde2) <= 0;
+  const hasta2LeDesde1 = compararHoras(hasta2, desde1) <= 0;
+  
+  return !(hasta1LeDesde2 || hasta2LeDesde1);
+}
+
 // Crear margen laboral
 export async function createMargenLaboral(
   prevState: ActionState,
@@ -35,19 +81,16 @@ export async function createMargenLaboral(
       };
     }
 
-    // Convertir horas a DateTime (usando fecha base)
-    const baseDate = new Date("2000-01-01");
-    const [desdeHora, desdeMinuto] = desde.split(":");
-    const [hastaHora, hastaMinuto] = hasta.split(":");
-
-    const desdeDate = new Date(baseDate);
-    desdeDate.setHours(parseInt(desdeHora), parseInt(desdeMinuto), 0, 0);
-
-    const hastaDate = new Date(baseDate);
-    hastaDate.setHours(parseInt(hastaHora), parseInt(hastaMinuto), 0, 0);
+    // Validar formato de hora
+    if (!validarFormatoHora(desde) || !validarFormatoHora(hasta)) {
+      return {
+        success: false,
+        error: "Formato de hora inválido. Use HH:mm",
+      };
+    }
 
     // Validar que 'hasta' sea mayor que 'desde'
-    if (hastaDate <= desdeDate) {
+    if (compararHoras(hasta, desde) <= 0) {
       return {
         success: false,
         error: "La hora 'hasta' debe ser mayor que la hora 'desde'",
@@ -66,50 +109,32 @@ export async function createMargenLaboral(
       };
     }
 
-    // Verificar solapamientos
-    const solapamientos = await prisma.margenes_laborales.findMany({
-      where: {
-        diaId,
-        OR: [
-          {
-            AND: [
-              { desde: { lte: desdeDate } },
-              { hasta: { gt: desdeDate } },
-            ],
-          },
-          {
-            AND: [
-              { desde: { lt: hastaDate } },
-              { hasta: { gte: hastaDate } },
-            ],
-          },
-          {
-            AND: [
-              { desde: { gte: desdeDate } },
-              { hasta: { lte: hastaDate } },
-            ],
-          },
-        ],
-      },
+    // Obtener todos los márgenes del día para verificar solapamientos
+    const margenesExistentes = await prisma.margenes_laborales.findMany({
+      where: { diaId },
     });
 
-    if (solapamientos.length > 0) {
-      return {
-        success: false,
-        error: "El horario se solapa con otro margen existente",
-      };
+    // Verificar solapamientos con cada margen existente
+    for (const margen of margenesExistentes) {
+      if (horariosSeSuperponen(desde, hasta, margen.desde, margen.hasta)) {
+        return {
+          success: false,
+          error: `El horario se solapa con el rango ${margen.desde} - ${margen.hasta}`,
+        };
+      }
     }
 
+    // Crear el margen laboral (ahora con strings)
     const margen = await prisma.margenes_laborales.create({
       data: {
         diaId,
         estado,
-        desde: desdeDate,
-        hasta: hastaDate,
+        desde,
+        hasta,
       },
     });
 
-    revalidatePath("diaLaboral");
+    revalidatePath("/diaLaboral");
 
     return {
       success: true,
@@ -151,19 +176,16 @@ export async function updateMargenLaboral(
       };
     }
 
-    // Convertir horas a DateTime
-    const baseDate = new Date("2000-01-01");
-    const [desdeHora, desdeMinuto] = desde.split(":");
-    const [hastaHora, hastaMinuto] = hasta.split(":");
-
-    const desdeDate = new Date(baseDate);
-    desdeDate.setHours(parseInt(desdeHora), parseInt(desdeMinuto), 0, 0);
-
-    const hastaDate = new Date(baseDate);
-    hastaDate.setHours(parseInt(hastaHora), parseInt(hastaMinuto), 0, 0);
+    // Validar formato de hora
+    if (!validarFormatoHora(desde) || !validarFormatoHora(hasta)) {
+      return {
+        success: false,
+        error: "Formato de hora inválido. Use HH:mm",
+      };
+    }
 
     // Validar que 'hasta' sea mayor que 'desde'
-    if (hastaDate <= desdeDate) {
+    if (compararHoras(hasta, desde) <= 0) {
       return {
         success: false,
         error: "La hora 'hasta' debe ser mayor que la hora 'desde'",
@@ -182,47 +204,31 @@ export async function updateMargenLaboral(
       };
     }
 
-    // Verificar solapamientos (excluyendo el actual)
-    const solapamientos = await prisma.margenes_laborales.findMany({
+    // Obtener todos los márgenes del día (excluyendo el actual)
+    const margenesExistentes = await prisma.margenes_laborales.findMany({
       where: {
-        id: { not: id },
         diaId,
-        OR: [
-          {
-            AND: [
-              { desde: { lte: desdeDate } },
-              { hasta: { gt: desdeDate } },
-            ],
-          },
-          {
-            AND: [
-              { desde: { lt: hastaDate } },
-              { hasta: { gte: hastaDate } },
-            ],
-          },
-          {
-            AND: [
-              { desde: { gte: desdeDate } },
-              { hasta: { lte: hastaDate } },
-            ],
-          },
-        ],
+        id: { not: id },
       },
     });
 
-    if (solapamientos.length > 0) {
-      return {
-        success: false,
-        error: "El horario se solapa con otro margen existente",
-      };
+    // Verificar solapamientos
+    for (const margen of margenesExistentes) {
+      if (horariosSeSuperponen(desde, hasta, margen.desde, margen.hasta)) {
+        return {
+          success: false,
+          error: `El horario se solapa con el rango ${margen.desde} - ${margen.hasta}`,
+        };
+      }
     }
 
+    // Actualizar el margen laboral
     const margen = await prisma.margenes_laborales.update({
       where: { id },
       data: {
         estado,
-        desde: desdeDate,
-        hasta: hastaDate,
+        desde,
+        hasta,
         updatedAt: new Date(),
       },
     });
