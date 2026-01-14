@@ -1,33 +1,31 @@
-import { getVehiculos } from "@/actions/vehiculo-actions";
-import VehiculoList from "@/components/vehiculo/VehiculoList";  
-import CreateVehiculoForm from "@/components/vehiculo/CreateVehiculoForm";  
+import { getTurnos } from "@/actions/turno.actions";
+import TurnoList from "@/components/turno/TurnoList";
+import CreateTurnoForm from "@/components/turno/CreateTurnoForm";
 import { Suspense } from "react";
 
-export default async function VehiculosPage() {  
-    const result = await getVehiculos();
+export default async function TurnoPage() {
+    const result = await getTurnos();
 
     return (
         <div className="container mx-auto p-6 max-w-7xl">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Gestión de Vehículos</h1>
+                <h1 className="text-3xl font-bold mb-2">Gestión de Turnos</h1>
                 <p className="text-gray-600">
-                    Administra los tipos de vehículos disponibles para tus servicios
+                    Administra las reservas de turnos para tus servicios
                 </p>
             </div>
 
-           
             <div className="mb-8">
-                <CreateVehiculoForm /> 
+                <CreateTurnoForm />
             </div>
 
-      
             <Suspense fallback={<LoadingSkeleton />}>
-                {result.success && result.data ? (
-                    <VehiculoList vehiculos={result.data} />
+                {result.success && result.data && Array.isArray(result.data) ? (
+                    <TurnoList turnos={result.data} />
                 ) : (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <p className="text-red-600">
-                            {result.error || "Error al cargar los vehículos"}
+                            {result.error || "Error al cargar los turnos"}
                         </p>
                     </div>
                 )}
@@ -41,7 +39,7 @@ function LoadingSkeleton() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
                 <div key={i} className="border rounded-lg p-4 animate-pulse">
-                    <div className="h-48 bg-gray-200 rounded mb-4"></div>
+                    <div className="h-40 bg-gray-200 rounded mb-4"></div>
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </div>

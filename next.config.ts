@@ -2,12 +2,24 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Esto permite que el build termine aunque haya errores de linting
     ignoreDuringBuilds: true, 
   },
   typescript: {
-    // Esto permite que el build termine aunque haya errores de tipos
     ignoreBuildErrors: true,
+  },
+  serverExternalPackages: ['@prisma/client', 'prisma'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**', // Permite cualquier hostname HTTPS
+      },
+      {
+        protocol: 'http',
+        hostname: '**', // Permite cualquier hostname HTTP
+      },
+    ],
+    unoptimized: true, // Desactiva optimización para simplificar
   },
 };
 
