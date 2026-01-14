@@ -1,6 +1,7 @@
 "use client";
 import { Header } from "@/components/Header";
 import { BookingProvider } from "@/app/context/Booking";
+import SessionWrapper from "./providers/SessionWrapper";
 
 export default function LayoutComponent({
   children,
@@ -10,9 +11,11 @@ export default function LayoutComponent({
   session: any;
 }) {
   return (
-    <BookingProvider>
-       <Header session={session} />
-       {children}
-    </BookingProvider>
+    <SessionWrapper>
+      <BookingProvider session={session}>
+         <Header session={session} />
+         {children}
+      </BookingProvider>
+    </SessionWrapper>
   );
 }
