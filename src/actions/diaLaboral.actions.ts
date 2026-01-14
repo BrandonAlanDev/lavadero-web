@@ -18,14 +18,6 @@ export async function create(
     const dia = parseInt(formData.get("dia") as string);
     const estado = formData.get("estado") === "true";
 
-    // Validaciones
-    if (isNaN(dia) || dia < 0 || dia > 6) {
-      return {
-        success: false,
-        error: "El día debe ser un número entre 0 y 6",
-      };
-    }
-
     // Verificar si ya existe
     const existing = await prisma.dia_laboral.findFirst({
       where: { dia },
@@ -70,32 +62,11 @@ export async function update(
     const dia = parseInt(formData.get("dia") as string);
     const estado = formData.get("estado") === "true";
 
-    // Validaciones
-    if (!id) {
-      return {
-        success: false,
-        error: "ID es requerido",
-      };
-    }
-
-    if (isNaN(dia) || dia < 0 || dia > 6) {
-      return {
-        success: false,
-        error: "El día debe ser un número entre 0 y 6",
-      };
-    }
-
     // Verificar si existe
     const existing = await prisma.dia_laboral.findUnique({
       where: { id },
     });
 
-    if (!existing) {
-      return {
-        success: false,
-        error: "Día laboral no encontrado",
-      };
-    }
 
     // Verificar conflictos con otros días
     const conflict = await prisma.dia_laboral.findFirst({
@@ -139,12 +110,6 @@ export async function update(
 // Eliminar día laboral
 export async function deleteDiaLaboral(id: string): Promise<ActionState> {
   try {
-    if (!id) {
-      return {
-        success: false,
-        error: "ID es requerido",
-      };
-    }
 
     // Verificar si existe y tiene márgenes
     const existing = await prisma.dia_laboral.findUnique({

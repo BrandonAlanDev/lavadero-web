@@ -1,206 +1,225 @@
 "use client";
 
-import { useState } from "react";
-import { Clock, Plus, Pencil, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Pencil, Trash2, Calendar, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { MargenLaboralForm } from "@components/diaLaboral/horariosForm";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type MargenLaboral = {
   id: string;
   diaId: string;
   estado: boolean;
-  desde: Date;
-  hasta: Date;
+  desde: string;  // ← Ahora es string "08:00"
+  hasta: string;  // ← Ahora es string "17:00"
+};
+
+type DiaLaboral = {
+  id: string;
+  estado: boolean;
+  dia: number;
   createdAt: Date;
   updatedAt: Date;
+  margenes?: MargenLaboral[];
 };
 
-type HorariosListProps = {
-  diaId: string;
-  diaNombre: string;
-  margenes: MargenLaboral[];
-  onSuccess: () => void;
+type DiaLaboralListProps = {
+  diasLaborales: DiaLaboral[];
+  isLoading: boolean;
+  onEdit: (dia: DiaLaboral) => void;
   onDelete: (id: string) => void;
+  onAsignarHorarios: (dia: DiaLaboral) => void;
 };
 
-export function HorariosList({
-  diaId,
-  diaNombre,
-  margenes,
-  onSuccess,
+const DIAS_SEMANA = [
+  { nombre: "Domingo", color: "bg-purple-500" },
+  { nombre: "Lunes", color: "bg-blue-500" },
+  { nombre: "Martes", color: "bg-green-500" },
+  { nombre: "Miércoles", color: "bg-yellow-500" },
+  { nombre: "Jueves", color: "bg-orange-500" },
+  { nombre: "Viernes", color: "bg-red-500" },
+  { nombre: "Sábado", color: "bg-pink-500" },
+];
+
+export function DiaLaboralList({
+  diasLaborales,
+  isLoading,
+  onEdit,
   onDelete,
-}: HorariosListProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingMargen, setEditingMargen] = useState<MargenLaboral | null>(null);
-
-  const handleCreate = () => {
-    setEditingMargen(null);
-    setIsDialogOpen(true);
+  onAsignarHorarios,
+}: DiaLaboralListProps) {
+  // Ya no necesita formatear, solo retorna el string directamente
+  const formatTime = (hora: string) => {
+    return hora; // "08:00" ya está en formato correcto
   };
 
-  const handleEdit = (margen: MargenLaboral) => {
-    setEditingMargen(margen);
-    setIsDialogOpen(true);
-  };
+  if (isLoading) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="border-2">
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
-  const handleSuccess = () => {
-    setIsDialogOpen(false);
-    setEditingMargen(null);
-    onSuccess();
-  };
-
-  const formatTime = (date: Date) => {
-    const d = new Date(date);
-    return d.toLocaleTimeString("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
+  if (diasLaborales.length === 0) {
+    return (
+      <Card className="border-2 border-dashed">
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <Calendar className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">
+            No hay días laborales registrados
+          </h3>
+          <p className="text-muted-foreground text-center max-w-md">
+            Comienza agregando los días de la semana que serán considerados
+            como laborales.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-cyan-600" />
-          <h3 className="text-lg font-semibold text-cyan-700">
-            Horarios - {diaNombre}
-          </h3>
-          {margenes.length > 0 && (
-            <Badge variant="secondary" className="ml-2">
-              {margenes.length} {margenes.length === 1 ? "horario" : "horarios"}
-            </Badge>
-          )}
-        </div>
-        <Button
-          onClick={handleCreate}
-          size="sm"
-          className="bg-cyan-500 hover:bg-cyan-600 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Horario
-        </Button>
-      </div>
-
-      {margenes.length === 0 ? (
-        <div className="border-2 border-dashed border-cyan-200 rounded-lg p-8 text-center">
-          <Clock className="h-12 w-12 text-cyan-300 mx-auto mb-3" />
-          <p className="text-cyan-600 font-medium mb-1">
-            No hay horarios definidos
-          </p>
-          <p className="text-sm text-cyan-500">
-            Agrega horarios para este día laboral
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {margenes.map((margen) => (
-            <div
-              key={margen.id}
-              className={`flex items-center justify-between p-4 border-2 rounded-lg transition-all ${
-                margen.estado
-                  ? "border-cyan-300 bg-gradient-to-r from-cyan-50/50 to-white"
-                  : "border-gray-300 bg-gray-50/50 opacity-60"
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div
-                  className={`p-2 rounded-lg ${
-                    margen.estado
-                      ? "bg-cyan-100 text-cyan-600"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                >
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-lg font-semibold text-cyan-700">
-                      {formatTime(margen.desde)}
-                    </span>
-                    <span className="text-cyan-500">→</span>
-                    <span className="font-mono text-lg font-semibold text-cyan-700">
-                      {formatTime(margen.hasta)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    {margen.estado ? (
-                      <Badge className="bg-cyan-500 hover:bg-cyan-600">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Activo
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Inactivo
-                      </Badge>
-                    )}
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {diasLaborales.map((dia) => {
+        const diaInfo = DIAS_SEMANA[dia.dia];
+        const cantidadHorarios = dia.margenes?.length || 0;
+        const horariosActivos = dia.margenes?.filter(m => m.estado) || [];
+        
+        return (
+          <Card
+            key={dia.id}
+            className={`border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${
+              dia.estado
+                ? "border-green-200 dark:border-green-900 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background"
+                : "border-gray-200 dark:border-gray-800 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/20 dark:to-background opacity-75"
+            }`}
+          >
+            <CardHeader className="space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-12 rounded-full ${diaInfo.color}`} />
+                  <div>
+                    <CardTitle className="text-2xl font-bold">
+                      {diaInfo.nombre}
+                    </CardTitle>
+                    <CardDescription className="text-xs mt-1">
+                      Día {dia.dia} de la semana
+                    </CardDescription>
                   </div>
                 </div>
               </div>
 
+              <div className="flex items-center gap-2 flex-wrap">
+                {dia.estado ? (
+                  <Badge className="bg-green-500 hover:bg-green-600 gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Activo
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <XCircle className="h-3 w-3" />
+                    Inactivo
+                  </Badge>
+                )}
+                
+                {cantidadHorarios > 0 && (
+                  <Badge variant="outline" className="gap-1 border-cyan-300 text-cyan-700">
+                    <Clock className="h-3 w-3" />
+                    {cantidadHorarios} {cantidadHorarios === 1 ? "horario" : "horarios"}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Mostrar horarios asignados */}
+              {horariosActivos.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-cyan-700 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Horarios activos:
+                  </p>
+                  <div className="space-y-1">
+                    {horariosActivos.slice(0, 3).map((margen) => (
+                      <div
+                        key={margen.id}
+                        className="flex items-center gap-2 text-sm bg-cyan-50 dark:bg-cyan-950/20 px-2 py-1 rounded"
+                      >
+                        <Clock className="h-3 w-3 text-cyan-600" />
+                        <span className="font-mono text-cyan-700 font-semibold">
+                          {formatTime(margen.desde)} → {formatTime(margen.hasta)}
+                        </span>
+                      </div>
+                    ))}
+                    {horariosActivos.length > 3 && (
+                      <p className="text-xs text-cyan-600 pl-2">
+                        +{horariosActivos.length - 3} más...
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Mensaje cuando no hay horarios */}
+              {cantidadHorarios === 0 && (
+                <div className="pt-2 border-t border-gray-200">
+                  <p className="text-xs text-muted-foreground italic">
+                    Sin horarios asignados
+                  </p>
+                </div>
+              )}
+            </CardHeader>
+
+            <CardContent className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 transition-colors"
+                onClick={() => onAsignarHorarios(dia)}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Asignar Horarios
+              </Button>
+              
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50"
-                  onClick={() => handleEdit(margen)}
+                  className="flex-1 border-2 hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => onEdit(dia)}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => onDelete(margen.id)}
+                  className="border-2 border-red-200 dark:border-red-900"
+                  onClick={() => onDelete(dia.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] border-4 border-cyan-400 shadow-2xl bg-[#FFF8DC]">
-          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-cyan-500 via-cyan-400 to-cyan-300 rounded-t-2xl" />
-
-          <DialogHeader className="space-y-4 pt-2">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-cyan-100 to-cyan-50 rounded-xl border-2 border-cyan-300">
-                <Clock className="h-6 w-6 text-cyan-600" />
-              </div>
-              <div className="flex-1">
-                <DialogTitle className="text-2xl font-bold text-cyan-600">
-                  {editingMargen ? "Editar Horario" : "Nuevo Horario"}
-                </DialogTitle>
-                <DialogDescription className="text-base mt-1.5 text-cyan-700/80">
-                  {diaNombre} - {editingMargen ? "Modifica el horario" : "Define un nuevo horario"}
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
-
-          <div className="py-2">
-            <MargenLaboralForm
-              diaId={diaId}
-              initialData={editingMargen}
-              onSuccess={handleSuccess}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

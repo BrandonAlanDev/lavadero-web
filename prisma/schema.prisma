@@ -123,8 +123,8 @@ model margenes_laborales {
   id        String      @id @default(cuid())
   diaId     String
   estado    Boolean
-  desde     DateTime    @db.DateTime(0)
-  hasta     DateTime    @db.DateTime(0)
+  desde     String 
+  hasta     String  
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   dia       dia_laboral @relation(fields: [diaId], references: [id], onDelete: Cascade)

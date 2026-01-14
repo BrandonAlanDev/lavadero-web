@@ -56,15 +56,11 @@ export async function getTurnos(params?: {
                 horarioReservado: 'asc'
             }
         });
-
-        console.log("✅ Obtenidos", turnos.length, "turnos");
-
         return {
             success: true,
             data: turnos
         };
     } catch (error) {
-        console.error("❌ ERROR getTurnos:", error);
         return {
             error: "Error al obtener los turnos",
             success: false
@@ -75,16 +71,12 @@ export async function getTurnos(params?: {
 export async function createTurno(
     prevState: ActionState,
     formData: FormData
-): Promise<ActionState> {
-    console.log("=== INICIO createTurno ===");
-    
+): Promise<ActionState> {    
     try {
         const vehiculoServicioId = formData.get("vehiculoServicioId") as string;
         const userId = formData.get("userId") as string;
         const horarioReservado = formData.get("horarioReservado") as string;
         const patente = formData.get("patente") as string;
-
-        console.log("📝 Datos recibidos:", { vehiculoServicioId, userId, horarioReservado, patente });
 
         // Validaciones
         if (!vehiculoServicioId || !userId || !horarioReservado || !patente) {
@@ -146,8 +138,6 @@ export async function createTurno(
             }
         });
 
-        console.log("✅ Turno creado exitosamente");
-
         revalidatePath("/turno");
 
         return {
@@ -155,7 +145,6 @@ export async function createTurno(
             data: nuevoTurno
         };
     } catch (error) {
-        console.error("❌ ERROR createTurno:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
@@ -167,7 +156,6 @@ export async function actualizarTurno(
     prevState: ActionState,
     formData: FormData
 ): Promise<ActionState> {
-    console.log("=== INICIO actualizarTurno ===");
     
     try {
         const id = formData.get("id") as string;
@@ -228,9 +216,6 @@ export async function actualizarTurno(
                 }
             }
         });
-
-        console.log("✅ Turno actualizado exitosamente");
-
         revalidatePath("/turno");
 
         return {
@@ -238,7 +223,6 @@ export async function actualizarTurno(
             data: turnoActualizado
         };
     } catch (error) {
-        console.error("❌ ERROR actualizarTurno:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
@@ -250,7 +234,6 @@ export async function deleteTurno(
     prevState: ActionState,
     formData: FormData
 ): Promise<ActionState> {
-    console.log("=== INICIO deleteTurno ===");
     
     try {
         const id = formData.get("id") as string;
@@ -281,8 +264,6 @@ export async function deleteTurno(
             }
         });
 
-        console.log("✅ Turno cancelado exitosamente");
-
         revalidatePath("/turno");
 
         return {
@@ -290,7 +271,6 @@ export async function deleteTurno(
             data: { id }
         };
     } catch (error) {
-        console.error("❌ ERROR deleteTurno:", error);
         return {
             error: error instanceof Error ? error.message : "Error desconocido",
             success: false
@@ -327,14 +307,12 @@ export async function obtenerDatosParaTurno(): Promise<ActionState> {
             })
         ]);
 
-        console.log("✅ Obtenidas", configuraciones.length, "configuraciones y", usuarios.length, "usuarios");
 
         return {
             success: true,
             data: { configuraciones, usuarios }
         };
     } catch (error) {
-        console.error("❌ ERROR obtenerDatosParaTurno:", error);
         return {
             error: "Error al obtener datos",
             success: false
