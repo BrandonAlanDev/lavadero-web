@@ -11,14 +11,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MargenLaboralForm } from "./horariosForm";
+import { HorariosForm } from "@/components/horarios/horariosForm";
 
 type MargenLaboral = {
   id: string;
   diaId: string;
   estado: boolean;
-  desde: Date;
-  hasta: Date;
+  desde: string;  // ← Ahora es string "08:00"
+  hasta: string;  // ← Ahora es string "17:00"
   createdAt: Date;
   updatedAt: Date;
 };
@@ -57,13 +57,9 @@ export function HorariosList({
     onSuccess();
   };
 
-  const formatTime = (date: Date) => {
-    const d = new Date(date);
-    return d.toLocaleTimeString("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
+  // Ya no necesita formatear, solo retorna el string directamente
+  const formatTime = (hora: string) => {
+    return hora; // "08:00" ya está en formato correcto
   };
 
   return (
@@ -192,7 +188,7 @@ export function HorariosList({
           <div className="h-px bg-gradient-to-r from-transparent via-cyan-300 to-transparent" />
 
           <div className="py-2">
-            <MargenLaboralForm
+            <HorariosForm
               diaId={diaId}
               initialData={editingMargen}
               onSuccess={handleSuccess}
