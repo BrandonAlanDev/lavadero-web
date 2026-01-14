@@ -5,14 +5,15 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      // En la sesión SÍ queremos que sea obligatorio porque ya lo cargamos
-      role: string; 
+      role: string;
+      telefono?: string | null;
     } & DefaultSession["user"];
   }
 
   interface User {
-    // Aquí lo ponemos OPCIONAL (?) para que no choque con PrismaAdapter al crear usuarios
-    role?: string; 
+    id: string;
+    role?: string;
+    telefono?: string | null; 
   }
 }
 

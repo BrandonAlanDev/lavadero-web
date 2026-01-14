@@ -19,42 +19,41 @@ export function Header({ session }: HeaderProps) {
       className="fixed top-0 left-0 right-0 z-50 glass shadow-md w-full"
     >
       <div className="container flex items-center justify-between h-16 mx-auto px-4 select-none">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/#home" className="flex items-center gap-2">
           <Car className="w-7 h-7 text-primary" />
-          <span className="text-xl font-semibold text-foreground">
+          <span className="hidden md:block text-xl font-semibold text-foreground">
             Auto<span className="text-primary">Shine</span>
           </span>
         </Link>
         
         <nav className="hidden md:flex items-center gap-8">
-          <Link href="#servicios" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="link" size="sm" onClick={onOpen}>
+          <Link href="/#servicios" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Button variant="link" size="sm">
               Servicios
             </Button>
           </Link>
 
-          <Link href="#nosotros" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="link" size="sm" onClick={onOpen}>
+          <Link href="/#nosotros" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Button variant="link" size="sm">
               Nosotros
             </Button>
           </Link>
 
-          <Link href="#ubicacion" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="link" size="sm" onClick={onOpen}>
+          <Link href="/#ubicacion" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Button variant="link" size="sm">
               Ubicación
             </Button>
           </Link>
 
-          <Link href="" className="cursor-pointer">
-            <Button variant="celeste" size="sm" onClick={onOpen}>
-                Turnos
-            </Button>
-          </Link>
+          
+          <Button variant="celeste" size="sm" onClick={onOpen}>
+              Turnos
+          </Button>
         </nav>
 
         {session ? (
           <div className="flex items-center gap-4">
-            <span className="text-sm">Hola, <Link href="/dashboard"><Button variant="link" size="sm">{session.user?.name}</Button></Link></span>
+            <span className="text-sm"><Link href="/dashboard"><Button variant="link" size="sm">{session.user?.name}</Button></Link></span>
             <form action={handleSignOut}>
               <Button variant="celeste" size="sm" type="submit">Salir</Button>
             </form>
