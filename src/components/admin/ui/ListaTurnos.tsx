@@ -9,13 +9,14 @@ interface TurnoConRelaciones {
   id: string;
   horarioReservado: Date;
   patente: string;
-  estado: boolean;
+  estado: number;
   precioCongelado: number;
   seniaCongelada: number;
   user: {
     name: string | null;
     email: string;
     telefono?: string | null;
+    image: string | null;
   };
   vehiculo_servicio: {
     precio: number;
