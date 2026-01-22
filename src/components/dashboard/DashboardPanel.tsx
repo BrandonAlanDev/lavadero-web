@@ -9,7 +9,7 @@ import {
 import { Button } from "../ui/button";
 import { getUserTurnos, updateProfile, cancelTurno } from "@/actions/user-dashboard";
 import { useSession } from "next-auth/react";
-//import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 // Definición de tipos basada en lo que devuelve tu action
 type TurnoWithDetails = Awaited<ReturnType<typeof getUserTurnos>>[0];
@@ -18,6 +18,13 @@ export default function DashboardPanel({ user }: { user: any }) {
   const [activeTab, setActiveTab] = useState<'info' | 'turnos'>('info');
   const [turnos, setTurnos] = useState<TurnoWithDetails[]>([]);
   const [loadingTurnos, setLoadingTurnos] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user.role === 'ADMIN') {
+      router.push('/admin');
+    }
+  }, []);
   
   // Efecto para cargar turnos cuando se entra a la pestaña
   useEffect(() => {
