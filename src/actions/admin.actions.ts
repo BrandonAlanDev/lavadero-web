@@ -42,7 +42,7 @@ export async function obtenerTurnos(params: {
     const turnosRaw = await prisma.turno.findMany({
       where,
       include: {
-        user: { select: { name: true, email: true, telefono: true } },
+        user: { select: { name: true, email: true, telefono: true, image: true } },
         vehiculo_servicio: {
           include: { servicio: true, vehiculo: true },
         },

@@ -1,5 +1,5 @@
 "use client";
-import { Car } from "lucide-react";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -7,14 +7,14 @@ export function Footer() {
       <div className="container mx-auto">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Car className="w-5 h-5 text-primary" />
+            <Image src="/images/logopng.png" alt="" width={'32'} height={'32'}/>
             <span className="font-semibold text-foreground">
-              Auto<span className="text-primary">Shine</span>
+              Chapa{" "}<span className="text-primary">Detail</span>
             </span>
           </div>
           
           <p className="text-sm text-muted-foreground text-center">
-            © {new Date().getFullYear()} AutoShine. Todos los derechos reservados.
+            Chapa detail.{" "}Lavadero en Santa clara.{" "}{new Date().getFullYear()} 
           </p>
 
           <div className="flex gap-6">
