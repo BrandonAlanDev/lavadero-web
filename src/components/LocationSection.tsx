@@ -35,7 +35,7 @@ export function LocationSection() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Dirección</h3>
-                <p className="text-muted-foreground">Av. Principal 1234, Ciudad</p>
+                <p className="text-muted-foreground">Av. Montreal 1118, Santa Clara del Mar</p>
               </div>
             </div>
 
@@ -45,7 +45,7 @@ export function LocationSection() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Teléfono</h3>
-                <p className="text-muted-foreground">+54 11 1234-5678</p>
+                <p className="text-muted-foreground">+54 2234 39-8429</p>
               </div>
             </div>
 
@@ -69,10 +69,9 @@ export function LocationSection() {
             className="rounded-xl overflow-hidden border border-celeste/20 h-[400px] shadow-[0_10px_40px_-10px_hsl(210,25%,10%/0.2)]"
           >
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3284.0168878895436!2d-58.38375908477032!3d-34.60373888045943!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4aa9f0a6da5edb%3A0x11bead4e234e558b!2sObelisco!5e0!3m2!1ses!2sar!4v1620000000000!5m2!1ses!2sar"
-              width="100%"
-              height="100%"
-              style={{ border: 0, filter: "grayscale(1) contrast(1.1)" }}
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1575.654469426551!2d-57.51808311571055!3d-37.82965279424021!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9584d17d73960711%3A0x2e3eb03a5f14c0d!2sAv.%20Montreal%201118%2C%20B7609%20Santa%20Clara%20del%20Mar%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1ses-419!2sar!4v1769111646685!5m2!1ses-419!2sar"
+              width="600" 
+              height="450" 
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
