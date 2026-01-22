@@ -27,15 +27,14 @@ export function Hero({ onBookingClick }: HeroProps) {
       <div className="container relative z-10 pt-20">
         <div className="max-w-2xl">
 
-          <motion.h1
+          <motion.p
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="font-display text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-white"
           >
-            Tu vehículo merece{" "}
-            <span className="text-celeste">brillar</span>
-          </motion.h1>
+            <span>Tu vehículo merece{" "} <span className="bg-linear-to-r from-[#a3e8ff] to-white bg-clip-text text-shadow-md text-shadow-white">BRILLAR</span></span> 
+          </motion.p>
 
           <motion.p
             initial={{ opacity: 0, y: 30 }}

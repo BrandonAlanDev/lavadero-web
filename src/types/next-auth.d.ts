@@ -7,13 +7,15 @@ declare module "next-auth" {
       id: string;
       role: string;
       telefono?: string | null;
+      image?: string | null; 
     } & DefaultSession["user"];
   }
 
   interface User {
     id: string;
     role?: string;
-    telefono?: string | null; 
+    telefono?: string | null;
+    image?: string | null; 
   }
 }
 
