@@ -6,21 +6,20 @@ const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
+  const userRole = req.auth?.user?.role;
   const { nextUrl } = req;
 
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
-  
-  // Rutas que SIEMPRE redirigen al Dashboard si ya estás logueado
   const isAuthRoute = ["/login", "/register"].includes(nextUrl.pathname);
-
-  // Rutas que REQUIEREN estar logueado (Protegidas)
+  const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+  
   const isProtectedRoute = ["/dashboard", "/turnos", "/admin"].some((route) => 
     nextUrl.pathname.startsWith(route)
   );
 
   if (isApiAuthRoute) return NextResponse.next();
 
-  // Si estás logueado e intentas ir a login/register, te manda al dashboard
+  // 1. .redirect
   if (isAuthRoute) {
     if (isLoggedIn) {
       return NextResponse.redirect(new URL("/dashboard", nextUrl));
@@ -28,22 +27,29 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // Si la ruta es protegida y NO estás logueado, te manda al login
-  // callbackUrl sirve para que al loguearse lo devuelva a donde quería ir (ej: /turnos)
+  // 2. Lógica de ADMIN
+  if (isAdminRoute) {
+    if (!isLoggedIn) {
+      const callbackUrl = nextUrl.pathname + nextUrl.search;
+      return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`, nextUrl));
+    }
+    
+    if (userRole !== "ADMIN") {
+      // Redirigir si no tiene permisos
+      return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    }
+    
+    return NextResponse.next();
+  }
+
+  // 3. Protección de rutas generales
   if (isProtectedRoute && !isLoggedIn) {
     let callbackUrl = nextUrl.pathname;
     if (nextUrl.search) {
       callbackUrl += nextUrl.search;
     }
-    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
-    return NextResponse.redirect(new URL(`/login?callbackUrl=${encodedCallbackUrl}`, nextUrl));
+    return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`, nextUrl));
   }
 
-  // Todo lo demás es público
   return NextResponse.next();
 });
-
-// Matcher para excluir archivos estáticos
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-};

@@ -81,7 +81,7 @@ export async function cancelTurno(turnoId: string) {
   try {
     await prisma.turno.update({
       where: { id: turnoId },
-      data: { estado: false }, // false = cancelado según tu lógica
+      data: { estado: 0 }, // 0 = cancelado 1= pendiente 2= completado
     });
     revalidatePath("/dashboard");
     return { success: true };
