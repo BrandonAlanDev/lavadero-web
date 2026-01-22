@@ -7,16 +7,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import carwashDetail1 from "@/assets/carwash-detail-1.jpg";
+import carwashDetail1 from "@/assets/carwash-detail-3.jpg";
 import carwashDetail2 from "@/assets/carwash-detail-2.jpg";
-import carwashDetail3 from "@/assets/carwash-detail-3.jpg";
+import carwashDetail3 from "@/assets/carwash-detail-1.jpg";
 import Image from "next/image";
 
 
 const images = [
   { src: carwashDetail1, alt: "Limpieza exterior profesional", title: "Lavado Exterior" },
   { src: carwashDetail2, alt: "Limpieza interior detallada", title: "Limpieza Interior" },
-  { src: carwashDetail3, alt: "Acabado brillante", title: "Acabado Premium" },
+  { src: carwashDetail3, alt: "Pulido con un acabado brillante", title: "Pulido" },
 ];
 
 export function ImageCarousel() {

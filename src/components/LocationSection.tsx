@@ -29,7 +29,7 @@ export function LocationSection() {
             transition={{ duration: 0.6 }}
             className="space-y-6 items-center justify-center w-full md:max-w-[35vw] mx-auto"
           >
-            <div className="flex gap-4 p-6 rounded-xl bg-card border border-celeste/20 shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)]">
+            <div className="flex gap-4 p-6 rounded-xl bg-white border border-celeste/20 shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)]">
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-celeste/15 flex items-center justify-center">
                 <MapPin className="w-6 h-6 text-celeste-dark" />
               </div>
