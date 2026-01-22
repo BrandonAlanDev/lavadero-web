@@ -23,6 +23,7 @@ export default function DashboardPanel({ user }: { user: any }) {
   useEffect(() => {
     if (user.role === 'ADMIN') {
       router.push('/admin');
+      router.refresh();
     }
   }, []);
   
