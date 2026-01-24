@@ -30,6 +30,7 @@ export function AboutSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
+            className="bg-white rounded-2xl border-primary border-2 px-4 py-8 shadow-2xl"
           >
             <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
               Sobre <span className="text-celeste-dark">Nosotros</span>
@@ -59,7 +60,7 @@ export function AboutSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
-                className="flex gap-4 p-6 rounded-xl bg-card border border-celeste/20 hover:border-celeste/50 transition-all shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)] hover:shadow-[0_12px_40px_-10px_hsl(210,25%,10%/0.2)]"
+                className="flex gap-4 p-6 rounded-xl bg-white border border-celeste/20 hover:border-celeste/50 transition-all shadow-2xl"
               >
                 <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-celeste/15 flex items-center justify-center">
                   <feature.icon className="w-6 h-6 text-celeste-dark" />
