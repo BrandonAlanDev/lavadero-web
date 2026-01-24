@@ -4,6 +4,7 @@ import { deleteTurno } from "@/actions/turno.actions";
 import { useActionState } from "react";
 import { useState } from "react";
 import EditTurnoModal from "./EditarTurnoModal";
+import { Button } from "../ui/button";
 
 const initialState = {
     success: false,
@@ -17,7 +18,7 @@ type Turno = {
     patente: string;
     precioCongelado: number;
     seniaCongelada: number;
-    estado: boolean;
+    estado: number;
     user: {
         id: string;
         name: string | null;
@@ -37,7 +38,7 @@ type Turno = {
     };
 };
 
-export default function TurnoList({ turnos }: { turnos: Turno[] }) {
+export default function TurnoList({ session, turnos }: { session: any; turnos: Turno[] }) {
     if (!Array.isArray(turnos)) {
         console.error("TurnoList: turnos no es un array", turnos);
         return (
@@ -61,13 +62,13 @@ export default function TurnoList({ turnos }: { turnos: Turno[] }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {turnos.map((turno) => (
-                <TurnoCard key={turno.id} turno={turno} />
+                <TurnoCard session={session} key={turno.id} turno={turno} />
             ))}
         </div>
     );
 }
 
-function TurnoCard({ turno }: { turno: Turno }) {
+function TurnoCard({session, turno }: { session: any; turno: Turno }) {
     const [state, formAction] = useActionState(deleteTurno, initialState);
     const [showEditModal, setShowEditModal] = useState(false);
 
@@ -101,7 +102,7 @@ function TurnoCard({ turno }: { turno: Turno }) {
             }`}>
                 {/* Header */}
                 <div className={`p-4 text-white ${
-                    isPasado ? 'bg-gray-500' : isHoy ? 'bg-orange-500' : 'bg-blue-600'
+                    isPasado ? 'bg-gray-500' : isHoy ? 'bg-green-700' : 'bg-[#6fa9da]'
                 }`}>
                     <div className="flex items-center justify-between">
                         <div>
@@ -156,27 +157,29 @@ function TurnoCard({ turno }: { turno: Turno }) {
 
                     {/* Acciones */}
                     <div className="flex gap-2 pt-3">
-                        <button
+                        <Button
                             onClick={() => setShowEditModal(true)}
+                            variant={isPasado ? "ghost" : "celeste"}
                             disabled={isPasado}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="flex-1 py-2 rounded text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            Editar
-                        </button>
+                            {isPasado ? "Fecha pasada por gestionar" : "Editar"}
+                        </Button>
                         
                         <form action={formAction}>
                             <input type="hidden" name="id" value={turno.id} />
-                            <button
+                            <Button
                                 type="submit"
+                                variant={"rojo"}
                                 onClick={(e) => {
                                     if (!confirm('¿Estás seguro de cancelar este turno?')) {
                                         e.preventDefault();
                                     }
                                 }}
-                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                                className="px-4 py-2text-sm font-medium"
                             >
                                 Cancelar
-                            </button>
+                            </Button>
                         </form>
                     </div>
 
@@ -193,6 +196,7 @@ function TurnoCard({ turno }: { turno: Turno }) {
 
             {showEditModal && (
                 <EditTurnoModal
+                    session={session}
                     turno={turno}
                     onClose={() => setShowEditModal(false)}
                 />

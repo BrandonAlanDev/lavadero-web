@@ -2,12 +2,15 @@ import { getTurnos } from "@/actions/turno.actions";
 import TurnoList from "@/components/turno/TurnoList";
 import CreateTurnoForm from "@/components/turno/CreateTurnoForm";
 import { Suspense } from "react";
+import { auth } from "@/auth";
 
 export default async function TurnoPage() {
-    const result = await getTurnos();
+    const session = await auth();
+
+    const result = (session?.user.role === "ADMIN") ? await getTurnos() : await getTurnos({userId:session?.user.id});
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl">
+        <div className="container mx-auto p-6 max-w-7xl mt-20">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold mb-2">Gestión de Turnos</h1>
                 <p className="text-gray-600">
@@ -16,12 +19,12 @@ export default async function TurnoPage() {
             </div>
 
             <div className="mb-8">
-                <CreateTurnoForm />
+                <CreateTurnoForm session={session} />
             </div>
 
             <Suspense fallback={<LoadingSkeleton />}>
                 {result.success && result.data && Array.isArray(result.data) ? (
-                    <TurnoList turnos={result.data} />
+                    <TurnoList session={session} turnos={result.data} />
                 ) : (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                         <p className="text-red-600">
