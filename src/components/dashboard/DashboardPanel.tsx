@@ -39,7 +39,7 @@ export default function DashboardPanel({ user }: { user: any }) {
   }, [activeTab, user.id]);
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8 min-h-screen bg-gray-50/50 mt-[50px]">
+    <div className="max-w-5xl mx-auto p-4 md:p-8 min-h-screen bg-white  border-x-2  mt-[50px] shadow-2xl shadows-black">
       {/* Header del Dashboard */}
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -102,8 +102,8 @@ function TabButton({ isActive, onClick, label, icon }: any) {
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 z-10 ${
-        isActive ? "text-primary" : "text-gray-500 hover:text-gray-700"
+      className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 z-10 rounded-full text-shadow-md ${
+        isActive ? "text-blue-950 bg-amber-200 " : "text-gray-500 hover:text-blue-900 hover:bg-gray-100"
       }`}
     >
       {isActive && (
@@ -250,9 +250,24 @@ function TurnosList({ turnos, loading }: { turnos: TurnoWithDetails[], loading: 
 
   return (
     <div className="space-y-4">
+      <div className="px-2 py-4 bg-gray-50 rounded-2xl border-2 border-primary">
+      <p className="text-gray-500">Turnos pendientes</p>
       {turnos.map((turno) => (
-        <TurnoCard key={turno.id} turno={turno} />
+        turno.estado==1 && <TurnoCard key={turno.id} turno={turno} />
       ))}
+      </div>
+      <div className="px-2 py-4 bg-gray-50 rounded-2xl border-2 border-primary">
+      <p className="text-gray-500">Turnos completados</p>
+      {turnos.map((turno) => (
+        turno.estado==2 && <TurnoCard key={turno.id} turno={turno} />
+      ))}
+      </div>
+      <div className="px-2 py-4 bg-gray-50 rounded-2xl border-2 border-primary">
+      <p className="text-gray-500">Turnos cancelados</p>
+      {turnos.map((turno) => (
+        turno.estado==0 && <TurnoCard key={turno.id} turno={turno} />
+      ))}
+      </div>
     </div>
   );
 }
@@ -261,6 +276,9 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
   const [isCancelling, startCancelling] = useTransition();
   const isCancelled = !turno.estado;
   const isPast = new Date(turno.horarioReservado) < new Date();
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const router = useRouter();
 
   // Formateo de fecha
   const fecha = new Date(turno.horarioReservado);
@@ -268,11 +286,7 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
   const hora = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
   const handleCancel = () => {
-    if (confirm("¿Seguro que quieres cancelar este turno?")) {
-      startCancelling(async () => {
-        await cancelTurno(turno.id);
-      });
-    }
+    setShowCancelModal(true);
   };
 
   return (
@@ -344,9 +358,89 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
                  {isCancelling ? "Cancelando..." : "Cancelar Turno"}
                </Button>
              )}
+             {/* Renderizado de Modales Condicional */}
+            {showCancelModal && (
+                <ConfirmCancelModal 
+                    onCancel={() => setShowCancelModal(false)}
+                    onConfirm={async ()=>{let res = await cancelTurno(turno.id); setShowCancelModal(false); if (!res.success) { setShowErrorModal(true); } else { turno.estado=0; router.refresh();}}}
+                />
+            )}
+
+            {showErrorModal && (
+                <ModalError 
+                    error={"Ocurrió un error inesperado"} 
+                    onClose={() => setShowErrorModal(false)} 
+                />
+            )}
+            
+            {/* Modal de edición futuro
+            {showEditModal && (
+                <EditTurnoModal 
+                    turno={turno} 
+                    onClose={() => setShowEditModal(false)} 
+                />
+            )}
+            */}
           </div>
         </div>
       </div>
     </motion.div>
   );
+}
+
+function ConfirmCancelModal({ onConfirm, onCancel}: { onConfirm: () => void, onCancel: () => void}) {
+    const [isPendingConfirm, setIsPendingConfirm] = useState(false);
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="p-6 text-center">
+                    <div className="w-16 h-16 bg-white text-orange-600 border-2 border-red-800 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl text-center align-baseline">
+                        ⚠️
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800">¿Cancelar Turno?</h3>
+                    <p className="text-slate-500 mt-2 text-sm">
+                        Esta acción liberará el horario seleccionado. ¿Estás seguro que deseas continuar?
+                    </p>
+                </div>
+                <div className="flex border-t">
+                    <button 
+                        onClick={onCancel}
+                        className="flex-1 p-4 text-slate-600 font-semibold hover:bg-slate-50 transition-colors border-r"
+                    >
+                        Volver
+                    </button>
+                    <button 
+                        onClick={async () => {setIsPendingConfirm(true); await onConfirm(); setIsPendingConfirm(false);}}
+                        disabled={isPendingConfirm}
+                        className="flex-1 p-4 text-red-600 font-bold hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                        {isPendingConfirm ? "Cancelando..." : "Sí, cancelar"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Modal de Error
+function ModalError({ error, onClose }: { error: string, onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+                <div className="w-16 h-16 bg-white text-orange-600 border-2 border-red-800 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    🚫
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">No se pudo cancelar</h3>
+                <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <p className="text-sm text-slate-600 italic">"{error}"</p>
+                </div>
+                <button 
+                    onClick={onClose}
+                    className="mt-6 w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition-shadow shadow-lg shadow-slate-200"
+                >
+                    ENTENDIDO
+                </button>
+            </div>
+        </div>
+    );
 }

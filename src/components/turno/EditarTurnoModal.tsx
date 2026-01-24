@@ -4,6 +4,8 @@ import { actualizarTurno } from "@/actions/turno.actions";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef } from "react";
+import SeleccionadorHorario from "./SeleccionadorHorario";
+import { Button } from "../ui/button";
 
 const initialState = {
     success: false,
@@ -23,6 +25,7 @@ type Turno = {
         email: string | null;
     };
     vehiculo_servicio: {
+        id: string;
         vehiculo: {
             nombre: string | null;
         };
@@ -33,11 +36,12 @@ type Turno = {
 };
 
 type EditTurnoModalProps = {
+    session: any;
     turno: Turno;
     onClose: () => void;
 };
 
-export default function EditTurnoModal({ turno, onClose }: EditTurnoModalProps) {
+export default function EditTurnoModal({session, turno, onClose }: EditTurnoModalProps) {
     const [state, formAction] = useActionState(actualizarTurno, initialState);
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -67,7 +71,7 @@ export default function EditTurnoModal({ turno, onClose }: EditTurnoModalProps) 
     const minDate = today.toISOString().slice(0, 16);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
@@ -115,20 +119,12 @@ export default function EditTurnoModal({ turno, onClose }: EditTurnoModalProps) 
                     <form ref={formRef} action={formAction} className="space-y-4">
                         <input type="hidden" name="id" value={turno.id} />
 
-                        <div>
-                            <label htmlFor="horarioReservado" className="block text-sm font-medium mb-1">
-                                Fecha y Hora *
-                            </label>
-                            <input
-                                type="datetime-local"
-                                id="horarioReservado"
-                                name="horarioReservado"
-                                required
-                                min={minDate}
-                                defaultValue={formatDateForInput(turno.horarioReservado)}
-                                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
+                        <SeleccionadorHorario 
+                            name="horarioReservado"
+                            vehiculoServicioId={turno.vehiculo_servicio.id}
+                            turnoIdAExcluir={turno?.id}
+                            defaultValue={turno.horarioReservado.toISOString()}
+                        />
 
                         <div>
                             <label htmlFor="patente" className="block text-sm font-medium mb-1">
@@ -152,13 +148,14 @@ export default function EditTurnoModal({ turno, onClose }: EditTurnoModalProps) 
                         )}
 
                         <div className="flex gap-2 pt-4">
-                            <button
+                            <Button
                                 type="button"
+                                variant={"rojo"}
                                 onClick={onClose}
-                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex-1 px-4 py-2"
                             >
                                 Cancelar
-                            </button>
+                            </Button>
                             <SubmitButton />
                         </div>
                     </form>
@@ -172,12 +169,13 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     
     return (
-        <button
+        <Button
             type="submit"
+            variant={pending?"ghost":"celeste"}
             disabled={pending}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-4 py-2 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
             {pending ? "Guardando..." : "Guardar Cambios"}
-        </button>
+        </Button>
     );
 }
