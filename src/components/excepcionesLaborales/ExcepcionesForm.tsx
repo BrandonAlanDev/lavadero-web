@@ -3,6 +3,7 @@
 import { useFormState } from "react-dom";
 import { create, update } from "@/actions/excepcionesLaborales.actions";
 import { useEffect, useRef } from "react";
+import { Button } from "../ui/button";
 
 type ExcepcionFormProps = {
   excepcion?: {
@@ -109,12 +110,13 @@ export default function ExcepcionForm({ excepcion, onClose }: ExcepcionFormProps
         </div>
       )}
 
-      <button
+      <Button
         type="submit"
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+        variant={"celeste"}
+        className="w-full  py-2 px-4 rounded-md font-medium"
       >
         {excepcion ? 'Actualizar Excepción' : 'Crear Excepción'}
-      </button>
+      </Button>
     </form>
   );
 }

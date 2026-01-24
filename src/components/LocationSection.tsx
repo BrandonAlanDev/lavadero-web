@@ -27,9 +27,9 @@ export function LocationSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="space-y-6 items-center justify-center w-full md:max-w-[35vw] mx-auto"
+            className="space-y-6 items-center justify-center w-full md:max-w-[35vw] mx-auto "
           >
-            <div className="flex gap-4 p-6 rounded-xl bg-white border border-celeste/20 shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)]">
+            <div className="flex gap-4 p-6 rounded-xl bg-white border border-celeste/20 shadow-2xl">
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-celeste/15 flex items-center justify-center">
                 <MapPin className="w-6 h-6 text-celeste-dark" />
               </div>
@@ -39,7 +39,7 @@ export function LocationSection() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-6 rounded-xl bg-card border border-celeste/20 shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)]">
+            <div className="flex gap-4 p-6 rounded-xl  bg-white border border-celeste/20  shadow-2xl">
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-celeste/15 flex items-center justify-center">
                 <Phone className="w-6 h-6 text-celeste-dark" />
               </div>
@@ -49,7 +49,7 @@ export function LocationSection() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-6 rounded-xl bg-card border border-celeste/20 shadow-[0_8px_30px_-10px_hsl(210,25%,10%/0.12)]">
+            <div className="flex gap-4 p-6 rounded-xl  bg-white border border-celeste/20  shadow-2xl">
               <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-celeste/15 flex items-center justify-center">
                 <Clock className="w-6 h-6 text-celeste-dark" />
               </div>
@@ -66,7 +66,7 @@ export function LocationSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="rounded-xl overflow-hidden border border-celeste/20 h-[400px] shadow-[0_10px_40px_-10px_hsl(210,25%,10%/0.2)]"
+            className="rounded-xl overflow-hidden border border-celeste/20 h-[400px] bg-white  shadow-2xl"
           >
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1575.654469426551!2d-57.51808311571055!3d-37.82965279424021!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9584d17d73960711%3A0x2e3eb03a5f14c0d!2sAv.%20Montreal%201118%2C%20B7609%20Santa%20Clara%20del%20Mar%2C%20Provincia%20de%20Buenos%20Aires!5e0!3m2!1ses-419!2sar!4v1769111646685!5m2!1ses-419!2sar"

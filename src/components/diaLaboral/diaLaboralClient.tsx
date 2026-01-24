@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export type DiaLaboral = {
   id: string;
@@ -127,9 +128,14 @@ export function DiaLaboralClient({ initialData }: DiaLaboralClientProps) {
 
   return (
     <>
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-between mb-6">
+        <div className="flex flex-row flex-wrap gap-5">
+        <Link href="/admin"><Button variant={"celeste"}>Gestionar Turnos</Button></Link>
+        <Link href="/excepcionesLaborales"><Button variant={"rojo"}>Gestionar Feriados</Button></Link>
+        </div>
         <Button
           onClick={handleCreate}
+          variant={"celeste"}
           size="lg"
           className="gap-2 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         >

@@ -51,9 +51,11 @@ export function Hero({ onBookingClick }: HeroProps) {
             transition={{ duration: 0.6, delay: 0.5 }}
             className="flex flex-col sm:flex-row gap-4 mb-12"
           >
-            <Button variant="celeste" size="lg" onClick={onBookingClick}>
-              Reservar Turno Ahora
-            </Button>
+            <Link href="/turno">
+              <Button variant="celeste" size="lg">
+                Reservar Turno Ahora
+              </Button>
+            </Link>
             <Button variant="blanco" asChild>
               <Link href="#servicios">Ver Servicios</Link>
             </Button>

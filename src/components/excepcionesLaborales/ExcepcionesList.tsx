@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { deleteExcepcion, softDeleteExcepcion } from "@/actions/excepcionesLaborales.actions";
 import ExcepcionForm from "./ExcepcionesForm";
+import { Button } from "../ui/button";
 
 type Excepcion = {
   id: string;
@@ -83,12 +84,13 @@ export default function ExcepcionesList({ excepciones }: ExcepcionesListProps) {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Editar Excepción</h3>
-                <button
+                <Button
                   onClick={() => setEditingId(null)}
+                  variant={"ghost"}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   ✕
-                </button>
+                </Button>
               </div>
               <ExcepcionForm
                 excepcion={excepcion}
@@ -131,31 +133,34 @@ export default function ExcepcionesList({ excepciones }: ExcepcionesListProps) {
                 </div>
 
                 <div className="flex gap-2 ml-4">
-                  <button
+                  <Button
                     onClick={() => setEditingId(excepcion.id)}
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    variant={"celeste"}
+                    className="px-3 py-1 text-sm"
                     disabled={deletingId === excepcion.id}
                   >
                     Editar
-                  </button>
+                  </Button>
                   
                   {excepcion.estado && (
-                    <button
+                    <Button
                       onClick={() => handleSoftDelete(excepcion.id)}
-                      className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+                      variant={"amarillo"}
+                      className="px-3 py-1 text-sm"
                       disabled={deletingId === excepcion.id}
                     >
                       {deletingId === excepcion.id ? 'Desactivando...' : 'Desactivar'}
-                    </button>
+                    </Button>
                   )}
 
-                  <button
+                  <Button
                     onClick={() => handleDelete(excepcion.id)}
-                    className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    variant={"rojo"}
+                    className="px-3 py-1 text-sm"
                     disabled={deletingId === excepcion.id}
                   >
                     {deletingId === excepcion.id ? 'Eliminando...' : 'Eliminar'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

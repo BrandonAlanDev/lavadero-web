@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { DoorOpen } from "lucide-react";
 import Link from "next/link";
 import { handleSignOut } from "@/actions/auth-actions";
-import { useBooking } from "@/app/context/Booking";
 import Image from "next/image";
 
 interface HeaderProps {
@@ -12,7 +11,6 @@ interface HeaderProps {
 }
 
 export function Header({ session }: HeaderProps) {
-  const { onOpen } = useBooking();
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }}
@@ -47,10 +45,11 @@ export function Header({ session }: HeaderProps) {
             </Button>
           </Link>
 
-          
-          <Button variant="celeste" size="sm" onClick={onOpen}>
-              Turnos
-          </Button>
+          <Link href={session ? "/turno" : "/login"} className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Button variant="celeste" size="sm">
+                Turnos
+            </Button>
+          </Link>
         </nav>
 
         {session ? (
