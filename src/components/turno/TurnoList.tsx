@@ -17,7 +17,7 @@ type Turno = {
     patente: string;
     precioCongelado: number;
     seniaCongelada: number;
-    estado: boolean;
+    estado: number;
     user: {
         id: string;
         name: string | null;
@@ -37,7 +37,7 @@ type Turno = {
     };
 };
 
-export default function TurnoList({ turnos }: { turnos: Turno[] }) {
+export default function TurnoList({ session, turnos }: { session: any; turnos: Turno[] }) {
     if (!Array.isArray(turnos)) {
         console.error("TurnoList: turnos no es un array", turnos);
         return (
@@ -61,13 +61,13 @@ export default function TurnoList({ turnos }: { turnos: Turno[] }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {turnos.map((turno) => (
-                <TurnoCard key={turno.id} turno={turno} />
+                <TurnoCard session={session} key={turno.id} turno={turno} />
             ))}
         </div>
     );
 }
 
-function TurnoCard({ turno }: { turno: Turno }) {
+function TurnoCard({session, turno }: { session: any; turno: Turno }) {
     const [state, formAction] = useActionState(deleteTurno, initialState);
     const [showEditModal, setShowEditModal] = useState(false);
 
@@ -193,6 +193,7 @@ function TurnoCard({ turno }: { turno: Turno }) {
 
             {showEditModal && (
                 <EditTurnoModal
+                    session={session}
                     turno={turno}
                     onClose={() => setShowEditModal(false)}
                 />

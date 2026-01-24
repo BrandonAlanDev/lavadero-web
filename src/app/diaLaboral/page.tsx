@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function DiaLaboralPage() {
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
+    <div className="container mx-auto py-8 px-4 max-w-7xl mt-20">
       {/* Header con gradiente */}
       <div className="mb-10">
         <div className="flex items-center gap-4 mb-4">

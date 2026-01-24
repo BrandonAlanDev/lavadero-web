@@ -4,6 +4,7 @@ import { createTurno, obtenerDatosParaTurno } from "@/actions/turno.actions";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import SeleccionadorHorario from "./SeleccionadorHorario";
 
 const initialState = {
     success: false,
@@ -31,19 +32,19 @@ type Usuario = {
     email: string | null;
 };
 
-export default function CreateTurnoForm() {
+export default function CreateTurnoForm({session} : {session: any}) {
     const [state, formAction] = useActionState(createTurno, initialState);
     const formRef = useRef<HTMLFormElement>(null);
     const [configuraciones, setConfiguraciones] = useState<Configuracion[]>([]);
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedServicio, setSelectedServicio] = useState<string>("");
 
     useEffect(() => {
         async function cargarDatos() {
             try {
                 const result = await obtenerDatosParaTurno();
-                console.log("📦 Resultado de obtenerDatosParaTurno:", result);
                 
                 if (result.success && result.data) {
                     setConfiguraciones(Array.isArray(result.data.configuraciones) ? result.data.configuraciones : []);
@@ -129,12 +130,18 @@ export default function CreateTurnoForm() {
                             required
                             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value="">Seleccione un cliente</option>
-                            {usuarios.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                    {u.name} {u.email && `(${u.email})`}
-                                </option>
-                            ))}
+                            {session.user.role === "USER" &&
+                                <option value={session.user.id}>
+                                    {session.user?.name} {session.user?.email && `(${session.user?.email})`}
+                                </option>}
+                                {session.user.role === "ADMIN" && <>
+                                    <option value="">Seleccione un cliente</option>
+                                    {usuarios.map((u) => (
+                                        <option key={u.id} value={u.id}>
+                                            {u.name} {u.email && `(${u.email})`}
+                                        </option>
+                                    ))}
+                                </>}
                         </select>
                     </div>
 
@@ -147,6 +154,7 @@ export default function CreateTurnoForm() {
                             name="vehiculoServicioId"
                             required
                             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onChange={(e)=>setSelectedServicio(e.target.value)}
                         >
                             <option value="">Seleccione vehículo y servicio</option>
                             {configuraciones.map((c) => (
@@ -159,19 +167,12 @@ export default function CreateTurnoForm() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="horarioReservado" className="block text-sm font-medium mb-1">
-                            Fecha y Hora *
-                        </label>
-                        <input
-                            type="datetime-local"
-                            id="horarioReservado"
-                            name="horarioReservado"
-                            required
-                            min={minDate}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
+                    <SeleccionadorHorario 
+                        name="horarioReservado"
+                        vehiculoServicioId={selectedServicio}
+                        // turnoIdAExcluir={turno?.id} // Solo si estás editando pero lo dejo de referencia
+                        // defaultValue={turno?.horarioReservado} // Solo si estás editando pero lo dejo de referencia
+                    />
 
                     <div>
                         <label htmlFor="patente" className="block text-sm font-medium mb-1">

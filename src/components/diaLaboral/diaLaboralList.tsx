@@ -108,8 +108,8 @@ export function DiaLaboralList({
             key={dia.id}
             className={`border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${
               dia.estado
-                ? "border-green-200 dark:border-green-900 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background"
-                : "border-gray-200 dark:border-gray-800 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900/20 dark:to-background opacity-75"
+                ? "border-green-200 bg-linear-to-br from-amber-100 to-white "
+                : "border-gray-200  bg-linear-to-br from-amber-100 to-whiteopacity-75"
             }`}
           >
             <CardHeader className="space-y-3">
@@ -141,7 +141,7 @@ export function DiaLaboralList({
                 )}
                 
                 {cantidadHorarios > 0 && (
-                  <Badge variant="outline" className="gap-1 border-cyan-300 text-cyan-700">
+                  <Badge variant="outline" className="gap-1 border-blue-300 text-blue-950">
                     <Clock className="h-3 w-3" />
                     {cantidadHorarios} {cantidadHorarios === 1 ? "horario" : "horarios"}
                   </Badge>
@@ -151,7 +151,7 @@ export function DiaLaboralList({
               {/* Mostrar horarios asignados */}
               {horariosActivos.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-gray-200">
-                  <p className="text-xs font-semibold text-cyan-700 flex items-center gap-1">
+                  <p className="text-xs font-semibold text-blue-950 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     Horarios activos:
                   </p>
@@ -159,16 +159,16 @@ export function DiaLaboralList({
                     {horariosActivos.slice(0, 3).map((margen) => (
                       <div
                         key={margen.id}
-                        className="flex items-center gap-2 text-sm bg-cyan-50 dark:bg-cyan-950/20 px-2 py-1 rounded"
+                        className="flex items-center gap-2 text-sm bg-white/90 px-2 py-1 rounded"
                       >
-                        <Clock className="h-3 w-3 text-cyan-600" />
-                        <span className="font-mono text-cyan-700 font-semibold">
+                        <Clock className="h-3 w-3 text-blue-800" />
+                        <span className="font-mono text-blue-950 font-semibold">
                           {formatTime(margen.desde)} → {formatTime(margen.hasta)}
                         </span>
                       </div>
                     ))}
                     {horariosActivos.length > 3 && (
-                      <p className="text-xs text-cyan-600 pl-2">
+                      <p className="text-xs text-blue-800 pl-2">
                         +{horariosActivos.length - 3} más...
                       </p>
                     )}
@@ -188,9 +188,9 @@ export function DiaLaboralList({
 
             <CardContent className="space-y-2">
               <Button
-                variant="outline"
+                variant="celeste"
                 size="sm"
-                className="w-full border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800 transition-colors"
+                className="w-full border-2"
                 onClick={() => onAsignarHorarios(dia)}
               >
                 <Clock className="h-4 w-4 mr-2" />
@@ -210,7 +210,7 @@ export function DiaLaboralList({
                 <Button
                   variant="destructive"
                   size="sm"
-                  className="border-2 border-red-200 dark:border-red-900"
+                  className="border-2 border-red-200"
                   onClick={() => onDelete(dia.id)}
                 >
                   <Trash2 className="h-4 w-4" />
