@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MessageCircleMoreIcon, CalendarClock, Car, Bike, Van } from "lucide-react";
+import { MessageCircleMoreIcon} from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
@@ -66,9 +66,8 @@ export default function ListaTurnos({
   };
 
   return (
-    <section className="space-y-2">
+    <section className="space-y-2 my-2">
       <div>
-        <h2 className="font-semibold text-xl text-gray-800">📋 Gestión de Turnos</h2>
         <p className="text-xs text-gray-500">
           Click en los encabezados para ordenar.
           {orderBy && (
@@ -78,7 +77,7 @@ export default function ListaTurnos({
       </div>
 
       <div className="overflow-x-auto shadow-sm border rounded-lg">
-        <table className="w-full text-left text-sm border-collapse">
+        <table className="w-full text-left text-sm border-collapse bg-white">
           <thead className="text-gray-700">
             <tr>
               <Header campo="horarioReservado" label="FECHA" />
@@ -96,7 +95,7 @@ export default function ListaTurnos({
               </tr>
             ) : (
               turnos.map((turno) => (
-                <tr key={turno.id} className="hover:bg-blue-50/30 transition-colors">
+                <tr key={turno.id} className="hover:bg-blue-50/40 transition-colors">
                   <td className="p-2 border font-medium text-center">
                     {new Date(turno.horarioReservado).toLocaleString("es-AR", {
                       day: "2-digit", month: "2-digit", year: "2-digit",

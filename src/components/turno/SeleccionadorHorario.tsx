@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { obtenerHorariosDisponibles } from "@/actions/calendario.actions";
+import { Button } from "../ui/button";
 
 interface Props {
   vehiculoServicioId?: string; // Requerido para calcular duración
@@ -88,18 +89,15 @@ export default function SeleccionadorHorario({
           ) : horariosLibres.length > 0 ? (
             <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto p-1">
               {horariosLibres.map((h) => (
-                <button
+                <Button
                   key={h}
+                  variant={(horaSeleccionada === h) ? "celeste" : "blanco"}
                   type="button"
                   onClick={() => setHoraSeleccionada(h)}
-                  className={`py-1.5 px-2 text-sm rounded-md transition-colors ${
-                    horaSeleccionada === h
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-white border hover:bg-blue-50 text-gray-700"
-                  }`}
+                  className={`py-1.5 px-2 text-sm`}
                 >
                   {h}
-                </button>
+                </Button>
               ))}
             </div>
           ) : (

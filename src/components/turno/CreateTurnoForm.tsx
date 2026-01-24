@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import SeleccionadorHorario from "./SeleccionadorHorario";
+import { Button } from "../ui/button";
 
 const initialState = {
     success: false,
@@ -84,12 +85,13 @@ export default function CreateTurnoForm({session} : {session: any}) {
         return (
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                 <p className="text-red-600 font-medium mb-2">{error}</p>
-                <button 
+                <Button 
                     onClick={() => window.location.reload()}
-                    className="text-sm text-blue-600 hover:underline"
+                    variant="amarillo"
+                    className="text-sm"
                 >
                     Intentar de nuevo
-                </button>
+                </Button>
             </div>
         );
     }
@@ -214,12 +216,13 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     
     return (
-        <button
+        <Button
             type="submit"
+            variant={pending?"ghost":"celeste"}
             disabled={pending}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 px-4 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
             {pending ? "Creando..." : "Crear Turno"}
-        </button>
+        </Button>
     );
 }

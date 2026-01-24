@@ -10,7 +10,6 @@ import { Button } from "../ui/button";
 import { getUserTurnos, updateProfile, cancelTurno } from "@/actions/user-dashboard";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { set } from "zod";
 
 // Definición de tipos basada en lo que devuelve tu action
 type TurnoWithDetails = Awaited<ReturnType<typeof getUserTurnos>>[0];

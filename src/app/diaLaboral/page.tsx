@@ -9,18 +9,19 @@ export default async function DiaLaboralPage() {
     <div className="container mx-auto py-8 px-4 max-w-7xl mt-20">
       {/* Header con gradiente */}
       <div className="mb-10">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl">
+        <div className="flex flex-row items-center gap-4 mb-4 align-middle">
+          <div className="p-3 rounded-2xl">
             <Calendar className="h-10 w-10 text-primary" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold from-primary to-primary/60 bg-clip-text text-primary">
               Días Laborales
             </h1>
             <p className="text-muted-foreground text-lg mt-1">
               Configura los días de la semana habilitados para trabajo
             </p>
           </div>
+          
         </div>
         
         {/* Barra decorativa */}

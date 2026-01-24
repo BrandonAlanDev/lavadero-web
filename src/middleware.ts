@@ -12,8 +12,9 @@ export default auth((req) => {
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
   const isAuthRoute = ["/login", "/register"].includes(nextUrl.pathname);
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
+  const isGestionRoute = ["/admin", "/excepcionesLaborales", "/diaLaboral"].includes(nextUrl.pathname);
   
-  const isProtectedRoute = ["/dashboard", "/turnos", "/admin"].some((route) => 
+  const isProtectedRoute = ["/dashboard", "/turnos", "/admin", "/excepcionesLaborales", "/diaLaboral"].some((route) => 
     nextUrl.pathname.startsWith(route)
   );
 
@@ -28,7 +29,7 @@ export default auth((req) => {
   }
 
   // 2. Lógica de ADMIN
-  if (isAdminRoute) {
+  if (isAdminRoute || isGestionRoute) {
     if (!isLoggedIn) {
       const callbackUrl = nextUrl.pathname + nextUrl.search;
       return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`, nextUrl));
