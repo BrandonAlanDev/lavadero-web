@@ -2,6 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { addMinutes } from "date-fns";
+
+const TIMEZONE = "America/Argentina/Buenos_Aires";
 
 export type ActionState = {
     error?: string;
@@ -9,81 +13,15 @@ export type ActionState = {
     data?: any;
 };
 
-export async function getTurnos(params?: {
-    userId?: string;
-    fecha?: Date;
-}): Promise<ActionState> {
-    try {
-        const where = {
-            estado: 1,
-            ...(params?.userId && { userId: params.userId }),
-            ...(params?.fecha && {
-                horarioReservado: {
-                    gte: new Date(params.fecha.setHours(0, 0, 0, 0)),
-                    lt: new Date(params.fecha.setHours(23, 59, 59, 999))
-                }
-            })
-        };
-
-        const turnos = await prisma.turno.findMany({
-            where,
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
-                    }
-                },
-                vehiculo_servicio: {
-                    include: {
-                        vehiculo: { select: { id: true, nombre: true } },
-                        servicio: { select: { id: true, nombre: true } }
-                    }
-                }
-            },
-            orderBy: {
-                horarioReservado: 'asc'
-            }
-        });
-
-        const safeTurnos = turnos.map((turno) => ({
-            ...turno,
-            precioCongelado: Number(turno.precioCongelado),
-            seniaCongelada: Number(turno.seniaCongelada),
-            
-            vehiculo_servicio: {
-                ...turno.vehiculo_servicio,
-                precio: Number(turno.vehiculo_servicio.precio),
-                senia: Number(turno.vehiculo_servicio.senia),
-                descuento: turno.vehiculo_servicio.descuento ? Number(turno.vehiculo_servicio.descuento) : 0,
-            }
-        }));
-
-        return {
-            success: true,
-            data: safeTurnos
-        };
-    } catch (error) {
-        console.error(error); // Good to log the actual error on server
-        return {
-            error: "Error al obtener los turnos",
-            success: false
-        };
-    }
+// Auxiliares zonificados
+function getMinutesFromZonedDate(date: Date): number {
+    const zoned = toZonedTime(date, TIMEZONE);
+    return zoned.getHours() * 60 + zoned.getMinutes();
 }
 
-// --- HELPER FUNCTIONS para hacer mas facil la logica compleja de turnos ---
-
-// Convierte "HH:mm" a minutos desde las 00:00 para comparar fácil
 function timeToMinutes(timeStr: string): number {
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 60 + minutes;
-}
-
-// Obtiene los minutos desde las 00:00 de un objeto Date
-function getMinutesFromDate(date: Date): number {
-    return date.getHours() * 60 + date.getMinutes();
 }
 
 export async function createTurno(
@@ -96,122 +34,87 @@ export async function createTurno(
         const horarioReservadoStr = formData.get("horarioReservado") as string;
         const patente = formData.get("patente") as string;
 
-        // 1. Validaciones Básicas
         if (!vehiculoServicioId || !userId || !horarioReservadoStr || !patente) {
             return { error: "Todos los campos son requeridos", success: false };
         }
 
-        const fechaSolicitadaInicio = new Date(horarioReservadoStr);
-        const ahora = new Date();
+        // --- Lógica de Desfase Arreglada :) ---
+        const fechaSolicitadaInicio = fromZonedTime(horarioReservadoStr, TIMEZONE);
+        const ahoraUTC = new Date();
 
-        // 2. Validación: Fecha pasada o muy cercana (mínimo 5 minutos de antelación para evitar condiciones de carrera o "0 diferencia")
-        const diferenciaEnMinutos = (fechaSolicitadaInicio.getTime() - ahora.getTime()) / 60000;
-        
-        if (diferenciaEnMinutos <= 0) {
-            return { error: "No puedes reservar en una fecha/hora pasada.", success: false };
-        }
-        // Opcional: poner un margen mínimo (ej: 10 min antes)
-        if (diferenciaEnMinutos < 10) {
-            return { error: "Debes reservar con al menos 10 minutos de anticipación.", success: false };
+        if (fechaSolicitadaInicio <= addMinutes(ahoraUTC, 10)) {
+            return { error: "Reserva con al menos 10 min de antelación.", success: false };
         }
 
-        // Obtener configuración del servicio (para saber duración)
         const vehiculoServicio = await prisma.vehiculo_servicio.findUnique({
             where: { id: vehiculoServicioId },
-            select: { duracion: true, precio: true, senia: true } // Solo traemos lo necesario
+            select: { duracion: true, precio: true, senia: true }
         });
 
-        if (!vehiculoServicio) {
-            return { error: "Servicio no encontrado", success: false };
+        if (!vehiculoServicio) return { error: "Servicio no encontrado", success: false };
+
+        if (!vehiculoServicioId || !userId || !horarioReservadoStr || !patente) {
+            return { error: "Todos los campos son requeridos", success: false };
         }
 
-        // Calculamos la hora de fin del turno solicitado
-        const duracionSolicitada = vehiculoServicio.duracion;
-        const fechaSolicitadaFin = new Date(fechaSolicitadaInicio.getTime() + duracionSolicitada * 60000);
+        const fechaSolicitadaFin = addMinutes(fechaSolicitadaInicio, vehiculoServicio.duracion);
 
-        // 3. Obtener Datos de Contexto (Paralelizado para velocidad)
-        // Necesitamos: 
-        // A) Día laboral correspondiente (0=Domingo, 1=Lunes...)
-        // B) Excepciones que choquen con la fecha
-        // C) Turnos existentes en ESE día para verificar choques finos
+        // Rango del día en Argentina para buscar colisiones
+        const fechaSoloString = horarioReservadoStr.split('T')[0]; // "2026-01-31"
+        const inicioDia = fromZonedTime(`${fechaSoloString} 00:00:00`, TIMEZONE);
+        const finDia = fromZonedTime(`${fechaSoloString} 23:59:59`, TIMEZONE);
         
-        const diaSemanaIndex = fechaSolicitadaInicio.getDay(); // 0 a 6
-        
-        // Definimos el rango del día completo para buscar turnos (00:00 a 23:59 del día solicitado)
-        const inicioDia = new Date(fechaSolicitadaInicio); inicioDia.setHours(0,0,0,0);
-        const finDia = new Date(fechaSolicitadaInicio); finDia.setHours(23,59,59,999);
+        const diaSemanaIndex = toZonedTime(fechaSolicitadaInicio, TIMEZONE).getDay();
 
         const [diaLaboralConfig, excepciones, turnosDelDia] = await Promise.all([
-            // A. Configuración del día laboral
             prisma.dia_laboral.findFirst({
                 where: { dia: diaSemanaIndex, estado: true },
                 include: { margenes: { where: { estado: true } } }
             }),
-            // B. Excepciones que engloben nuestro horario
             prisma.expeciones_laborales.findMany({
                 where: {
                     estado: true,
-                    // Si el rango de la excepción se solapa con el rango del turno
                     desde: { lte: fechaSolicitadaFin },
                     hasta: { gte: fechaSolicitadaInicio }
                 }
             }),
-            // C. Turnos ya agendados ese día (Estado 1 = Activo)
             prisma.turno.findMany({
                 where: {
-                    estado: 1, // Prisma boolean mapeado a 1
-                    horarioReservado: {
-                        gte: inicioDia,
-                        lte: finDia
-                    }
+                    estado: 1,
+                    horarioReservado: { gte: inicioDia, lte: finDia }
                 },
-                include: {
-                    vehiculo_servicio: { select: { duracion: true } }
-                }
+                include: { vehiculo_servicio: { select: { duracion: true } } }
             })
         ]);
 
-        // 4. Validación: Excepciones Laborales (Feriados, vacaciones, etc)
         if (excepciones.length > 0) {
-            return { error: `Fecha no disponible por excepción: ${excepciones[0].motivo}`, success: false };
+            return { error: `No disponible: ${excepciones[0].motivo}`, success: false };
         }
 
-        // 5. Validación: Horario Laboral (Día y Márgenes)
         if (!diaLaboralConfig) {
-            return { error: "El negocio permanece cerrado este día de la semana.", success: false };
+            return { error: "Cerrado este día.", success: false };
         }
 
-        const minutosInicioSolicitud = getMinutesFromDate(fechaSolicitadaInicio);
-        const minutosFinSolicitud = getMinutesFromDate(fechaSolicitadaFin);
+        // Validar márgenes usando minutos locales
+        const minutosInicio = getMinutesFromZonedDate(fechaSolicitadaInicio);
+        const minutosFin = minutosInicio + vehiculoServicio.duracion;
 
-        // Verificar si el turno cae DENTRO de algún margen laboral (ej: 08:00 a 12:00)
-        // Nota: El turno debe empezar Y terminar dentro del mismo margen (no puede quedar cortado al cierre)
-        const entraEnMargen = diaLaboralConfig.margenes.some((margen) => {
-            const margenInicio = timeToMinutes(margen.desde);
-            const margenFin = timeToMinutes(margen.hasta);
-            
-            return minutosInicioSolicitud >= margenInicio && minutosFinSolicitud <= margenFin;
+        const entraEnMargen = diaLaboralConfig.margenes.some((m) => {
+            return minutosInicio >= timeToMinutes(m.desde) && minutosFin <= timeToMinutes(m.hasta);
         });
 
         if (!entraEnMargen) {
-            return { error: "El horario seleccionado está fuera de los márgenes laborales o excede la hora de cierre.", success: false };
+            return { error: "Horario fuera de la jornada laboral.", success: false };
         }
 
-        // 6. Validación: Superposición con otros turnos (Overlap)
-        // Lógica: (StartA < EndB) y (EndA > StartB)
-        const hayChoque = turnosDelDia.some((turnoExistente) => {
-            const inicioExistente = new Date(turnoExistente.horarioReservado);
-            const finExistente = new Date(inicioExistente.getTime() + turnoExistente.vehiculo_servicio.duracion * 60000);
-
-            return (fechaSolicitadaInicio < finExistente && fechaSolicitadaFin > inicioExistente);
+        // Validar choque con otros turnos
+        const hayChoque = turnosDelDia.some((t) => {
+            const tInicio = t.horarioReservado;
+            const tFin = addMinutes(tInicio, t.vehiculo_servicio.duracion);
+            return (fechaSolicitadaInicio < tFin && fechaSolicitadaFin > tInicio);
         });
 
-        if (hayChoque) {
-            return { error: "El horario ya está ocupado por otro turno en ese intervalo.", success: false };
-        }
-
-        // --- CREACIÓN DEL TURNO ---
-        // Si llegamos aquí, todas las validaciones pasaron
+        if (hayChoque) return { error: "El horario ya está ocupado.", success: false };
 
         const nuevoTurno = await prisma.turno.create({
             data: {
@@ -219,52 +122,63 @@ export async function createTurno(
                 vehiculoServicioId,
                 userId,
                 horarioReservado: fechaSolicitadaInicio,
-                // Prisma Decimal espera string o number
                 precioCongelado: vehiculoServicio.precio, 
                 seniaCongelada: vehiculoServicio.senia,
                 patente: patente.toUpperCase(),
-                estado: 1, // true para booleano
-                createdAt: new Date(),
-                updatedAt: new Date()
-            },
-            // Incluimos relaciones solo si necesitamos devolverlas al front
-            include: {
-                user: true,
-                vehiculo_servicio: {
-                    include: {
-                        vehiculo: true,
-                        servicio: true
-                    }
-                }
+                estado: 1,
+                // CAMPOS OBLIGATORIOS
+                createdAt: ahoraUTC,
+                updatedAt: ahoraUTC, 
             }
         });
 
         revalidatePath("/turno");
+        return { success: true, data: { id: nuevoTurno.id } };
+
+    } catch (error) {
+        console.error(error);
+        return { error: "Error al crear el turno", success: false };
+    }
+}
+
+export async function getTurnos(params?: { userId?: string; fecha?: string }): Promise<ActionState> {
+    try {
+        let where: any = { estado: 1 };
+        if (params?.userId) where.userId = params.userId;
         
-        // Conversión manual de Decimal a Number para evitar el error de serialización
-        const turnoSafe = {
-            ...nuevoTurno,
-            precioCongelado: Number(nuevoTurno.precioCongelado),
-            seniaCongelada: Number(nuevoTurno.seniaCongelada),
-            vehiculo_servicio: {
-                ...nuevoTurno.vehiculo_servicio,
-                precio: Number(nuevoTurno.vehiculo_servicio.precio),
-                senia: Number(nuevoTurno.vehiculo_servicio.senia),
-                descuento: Number(nuevoTurno.vehiculo_servicio.descuento)
-            }
-        };
+        if (params?.fecha) {
+            // fecha viene como "YYYY-MM-DD"
+            const inicio = fromZonedTime(`${params.fecha} 00:00:00`, TIMEZONE);
+            const fin = fromZonedTime(`${params.fecha} 23:59:59`, TIMEZONE);
+            where.horarioReservado = { gte: inicio, lte: fin };
+        }
+
+        const turnos = await prisma.turno.findMany({
+            where,
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                vehiculo_servicio: {
+                    include: {
+                        vehiculo: { select: { nombre: true } },
+                        servicio: { select: { nombre: true } }
+                    }
+                }
+            },
+            orderBy: { horarioReservado: 'asc' }
+        });
 
         return {
             success: true,
-            data: turnoSafe
+            data: turnos.map(t => ({
+                ...t,
+                precioCongelado: Number(t.precioCongelado),
+                seniaCongelada: Number(t.seniaCongelada),
+                // Importante: toZonedTime aquí si vas a mostrar la hora en un componente que no maneja TZ
+                horarioReservado: t.horarioReservado 
+            }))
         };
-
     } catch (error) {
-        console.error("Error creando turno:", error);
-        return {
-            error: error instanceof Error ? error.message : "Error desconocido al procesar el turno",
-            success: false
-        };
+        return { error: "Error al obtener turnos", success: false };
     }
 }
 
@@ -274,12 +188,12 @@ export async function actualizarTurno(
 ): Promise<ActionState> {
     try {
         const id = formData.get("id") as string;
-        const horarioReservadoStr = formData.get("horarioReservado") as string;
+        const horarioReservadoStr = formData.get("horarioReservado") as string; // Viene "YYYY-MM-DDTHH:mm"
         const patente = formData.get("patente") as string;
 
         if (!id) return { error: "ID no proporcionado", success: false };
 
-        // 1. Obtener el turno actual para conocer su duración y datos
+        // 1. Obtener el turno actual
         const turnoActual = await prisma.turno.findUnique({
             where: { id },
             include: { vehiculo_servicio: true }
@@ -287,24 +201,29 @@ export async function actualizarTurno(
 
         if (!turnoActual) return { error: "Turno no encontrado", success: false };
 
-        // Si no se envió un nuevo horario, usamos el que ya tenía
-        const fechaSolicitadaInicio = horarioReservadoStr ? new Date(horarioReservadoStr) : new Date(turnoActual.horarioReservado);
-        const duracion = turnoActual.vehiculo_servicio.duracion;
-        const fechaSolicitadaFin = new Date(fechaSolicitadaInicio.getTime() + duracion * 60000);
-        const ahora = new Date();
+        // 2. Manejo de fecha con Zona Horaria
+        // Si viene un string nuevo, lo interpretamos como Argentina. Si no, mantenemos el Date de la DB.
+        const fechaSolicitadaInicio = horarioReservadoStr 
+            ? fromZonedTime(horarioReservadoStr, TIMEZONE) 
+            : turnoActual.horarioReservado;
 
-        // 2. Validación: Si el horario cambió, validar que no sea pasado
+        const duracion = turnoActual.vehiculo_servicio.duracion;
+        const fechaSolicitadaFin = addMinutes(fechaSolicitadaInicio, duracion);
+        const ahoraUTC = new Date();
+
+        // 3. Validación de fecha pasada (solo si cambió el horario)
         if (horarioReservadoStr) {
-            const diferenciaEnMinutos = (fechaSolicitadaInicio.getTime() - ahora.getTime()) / 60000;
-            if (diferenciaEnMinutos < 0) {
-                return { error: "No puedes mover un turno a una fecha pasada.", success: false };
+            if (fechaSolicitadaInicio < ahoraUTC) {
+                return { error: "No puedes mover un turno a una fecha/hora pasada.", success: false };
             }
         }
 
-        // 3. Obtener Datos de Contexto (Igual que en create)
-        const diaSemanaIndex = fechaSolicitadaInicio.getDay();
-        const inicioDia = new Date(fechaSolicitadaInicio); inicioDia.setHours(0,0,0,0);
-        const finDia = new Date(fechaSolicitadaInicio); finDia.setHours(23,59,59,999);
+        // 4. Obtener contexto para validaciones (Márgenes y Choques)
+        // Extraemos solo la parte "YYYY-MM-DD" para definir el rango del día
+        const fechaSoloString = toZonedTime(fechaSolicitadaInicio, TIMEZONE).toISOString().split('T')[0];
+        const inicioDia = fromZonedTime(`${fechaSoloString} 00:00:00`, TIMEZONE);
+        const finDia = fromZonedTime(`${fechaSoloString} 23:59:59`, TIMEZONE);
+        const diaSemanaIndex = toZonedTime(fechaSolicitadaInicio, TIMEZONE).getDay();
 
         const [diaLaboralConfig, excepciones, turnosDelDia] = await Promise.all([
             prisma.dia_laboral.findFirst({
@@ -322,53 +241,53 @@ export async function actualizarTurno(
                 where: {
                     estado: 1,
                     horarioReservado: { gte: inicioDia, lte: finDia },
-                    id: { not: id } // <--- CLAVE: Ignorar el turno que estamos editando
+                    id: { not: id } // Importante: Ignorar el turno que estamos editando
                 },
                 include: { vehiculo_servicio: { select: { duracion: true } } }
             })
         ]);
 
-        // 4. Validación: Excepciones
+        // 5. Validar Excepciones
         if (excepciones.length > 0) {
             return { error: `Horario no disponible: ${excepciones[0].motivo}`, success: false };
         }
 
-        // 5. Validación: Horario Laboral
+        // 6. Validar Horario Laboral
         if (!diaLaboralConfig) {
             return { error: "El negocio está cerrado este día.", success: false };
         }
 
-        const minutosInicio = getMinutesFromDate(fechaSolicitadaInicio);
-        const minutosFin = getMinutesFromDate(fechaSolicitadaFin);
+        const minutosInicio = getMinutesFromZonedDate(fechaSolicitadaInicio);
+        const minutosFin = minutosInicio + duracion;
 
         const entraEnMargen = diaLaboralConfig.margenes.some((margen) => {
-            const margenInicio = timeToMinutes(margen.desde);
-            const margenFin = timeToMinutes(margen.hasta);
-            return minutosInicio >= margenInicio && minutosFin <= margenFin;
+            const mInicio = timeToMinutes(margen.desde);
+            const mFin = timeToMinutes(margen.hasta);
+            return minutosInicio >= mInicio && minutosFin <= mFin;
         });
 
         if (!entraEnMargen) {
             return { error: "El nuevo horario está fuera de la jornada laboral.", success: false };
         }
 
-        // 6. Validación: Choque con otros turnos (Overlap)
+        // 7. Validar Superposición (Overlap)
         const hayChoque = turnosDelDia.some((t) => {
-            const inicioExistente = new Date(t.horarioReservado);
-            const finExistente = new Date(inicioExistente.getTime() + t.vehiculo_servicio.duracion * 60000);
-            return (fechaSolicitadaInicio < finExistente && fechaSolicitadaFin > inicioExistente);
+            const tInicio = t.horarioReservado;
+            const tFin = addMinutes(tInicio, t.vehiculo_servicio.duracion);
+            return (fechaSolicitadaInicio < tFin && fechaSolicitadaFin > tInicio);
         });
 
         if (hayChoque) {
-            return { error: "El nuevo horario ya está ocupado.", success: false };
+            return { error: "El nuevo horario ya está ocupado por otro turno.", success: false };
         }
 
-        // 7. Actualización
+        // 8. Actualización final
         const turnoActualizado = await prisma.turno.update({
             where: { id },
             data: {
                 horarioReservado: fechaSolicitadaInicio,
                 patente: patente ? patente.toUpperCase() : turnoActual.patente,
-                updatedAt: new Date()
+                updatedAt: ahoraUTC, // Satisfacemos el campo obligatorio
             },
             include: {
                 user: true,
@@ -378,7 +297,7 @@ export async function actualizarTurno(
 
         revalidatePath("/turno");
 
-        // Convertir Decimal a Number para el Cliente
+        // Devolvemos datos limpios para el front
         return {
             success: true,
             data: {
@@ -389,68 +308,20 @@ export async function actualizarTurno(
                     ...turnoActualizado.vehiculo_servicio,
                     precio: Number(turnoActualizado.vehiculo_servicio.precio),
                     senia: Number(turnoActualizado.vehiculo_servicio.senia),
-                    descuento: Number(turnoActualizado.vehiculo_servicio.descuento)
+                    descuento: Number(turnoActualizado.vehiculo_servicio.descuento || 0)
                 }
             }
         };
 
     } catch (error) {
+        console.error("Error al actualizar turno:", error);
         return {
-            error: error instanceof Error ? error.message : "Error al actualizar",
+            error: error instanceof Error ? error.message : "Error desconocido al actualizar",
             success: false
         };
     }
 }
 
-export async function deleteTurno(
-    prevState: ActionState,
-    formData: FormData
-): Promise<ActionState> {
-    
-    try {
-        const id = formData.get("id") as string;
-
-        if (!id) {
-            return {
-                error: "ID no proporcionado",
-                success: false
-            };
-        }
-
-        const existe = await prisma.turno.findUnique({
-            where: { id }
-        });
-
-        if (!existe) {
-            return {
-                error: "Turno no encontrado",
-                success: false
-            };
-        }
-
-        await prisma.turno.update({
-            where: { id },
-            data: {
-                estado: 0,
-                updatedAt: new Date()
-            }
-        });
-
-        revalidatePath("/turno");
-
-        return {
-            success: true,
-            data: { id }
-        };
-    } catch (error) {
-        return {
-            error: error instanceof Error ? error.message : "Error desconocido",
-            success: false
-        };
-    }
-}
-
-// Función auxiliar para obtener configuraciones disponibles y usuarios
 export async function obtenerDatosParaTurno(): Promise<ActionState> {
     try {
         const [configuraciones, usuarios] = await Promise.all([
@@ -479,6 +350,7 @@ export async function obtenerDatosParaTurno(): Promise<ActionState> {
             })
         ]);
 
+        // Convertimos los tipos Decimal de Prisma a Number para que el Front no explote
         const configuracionesPlanas = configuraciones.map((config) => ({
             ...config,
             precio: Number(config.precio),
@@ -496,7 +368,59 @@ export async function obtenerDatosParaTurno(): Promise<ActionState> {
     } catch (error) {
         console.error("Error en obtenerDatosParaTurno:", error);
         return {
-            error: "Error al obtener datos",
+            error: "Error al obtener datos para el formulario",
+            success: false
+        };
+    }
+}
+
+export async function deleteTurno(
+    prevState: ActionState,
+    formData: FormData
+): Promise<ActionState> {
+    
+    try {
+        const id = formData.get("id") as string;
+
+        if (!id) {
+            return {
+                error: "ID no proporcionado",
+                success: false
+            };
+        }
+
+        // Verificamos si existe antes de intentar actualizar
+        const existe = await prisma.turno.findUnique({
+            where: { id }
+        });
+
+        if (!existe) {
+            return {
+                error: "El turno que intentas eliminar no existe",
+                success: false
+            };
+        }
+
+        // Realizamos el borrado lógico (estado: 0)
+        await prisma.turno.update({
+            where: { id },
+            data: {
+                estado: 0,
+                updatedAt: new Date() // Satisfacemos el campo obligatorio
+            }
+        });
+
+        // Revalidamos la ruta para que la lista de turnos se actualice al instante
+        revalidatePath("/turno");
+
+        return {
+            success: true,
+            data: { id }
+        };
+    } catch (error) {
+        console.error("Error eliminando turno:", error);
+        return {
+            error: error instanceof Error ? error.message : "Error desconocido al eliminar el turno",
             success: false
         };
     }
