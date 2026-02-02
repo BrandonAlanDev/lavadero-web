@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteTurno } from "@/actions/turno.actions";
+import { deleteTurno, completedTurno } from "@/actions/turno.actions";
 import { useActionState } from "react";
 import { useState } from "react";
 import EditTurnoModal from "./EditarTurnoModal";
@@ -9,7 +9,12 @@ import { Button } from "../ui/button";
 const initialState = {
     success: false,
     error: undefined,
-    data: undefined,
+    data: undefined
+};
+const initialStateComplete = {
+    success: false,
+    error: undefined,
+    data: undefined
 };
 
 type Turno = {
@@ -70,6 +75,7 @@ export default function TurnoList({ session, turnos }: { session: any; turnos: T
 
 function TurnoCard({session, turno }: { session: any; turno: Turno }) {
     const [state, formAction] = useActionState(deleteTurno, initialState);
+    const [stateComplete, formActionComplete] = useActionState(completedTurno, initialStateComplete);
     const [showEditModal, setShowEditModal] = useState(false);
 
     const formatFecha = (fecha: Date) => {
@@ -157,14 +163,29 @@ function TurnoCard({session, turno }: { session: any; turno: Turno }) {
 
                     {/* Acciones */}
                     <div className="flex gap-2 pt-3">
+                        {session?.user.role === "ADMIN" &&
+                        <form className="w-full flex flex-wrap" action={formActionComplete}>
+                            <input type="hidden" name="id" value={turno.id} />
                         <Button
+                            onClick={(e) => {
+                                    if (!confirm('¿Estás seguro de completar este turno?')) {
+                                        e.preventDefault();
+                                    }
+                                }}
+                            type="submit"
+                            variant={isPasado ? "verde" : "celeste"}
+                            className="flex-1 py-2 rounded text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {isPasado ? "Completado" : "Editar"}
+                        </Button></form>}
+                        {session?.user.role !== "ADMIN" && <Button
                             onClick={() => setShowEditModal(true)}
                             variant={isPasado ? "ghost" : "celeste"}
                             disabled={isPasado}
                             className="flex-1 py-2 rounded text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             {isPasado ? "Fecha pasada por gestionar" : "Editar"}
-                        </Button>
+                        </Button>}
                         
                         <form action={formAction}>
                             <input type="hidden" name="id" value={turno.id} />
@@ -189,6 +210,14 @@ function TurnoCard({session, turno }: { session: any; turno: Turno }) {
                     {state.success && (
                         <p className="text-green-600 text-xs mt-2">
                             ✅ Turno cancelado
+                        </p>
+                    )}
+                    {stateComplete.error && (
+                        <p className="text-red-600 text-xs mt-2">{stateComplete.error}</p>
+                    )}
+                    {stateComplete.success && (
+                        <p className="text-green-600 text-xs mt-2">
+                            ✅ Turno completado
                         </p>
                     )}
                 </div>
