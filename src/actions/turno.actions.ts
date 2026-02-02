@@ -425,3 +425,55 @@ export async function deleteTurno(
         };
     }
 }
+
+export async function completedTurno(
+    prevState: ActionState,
+    formData: FormData
+): Promise<ActionState> {
+    
+    try {
+        const id = formData.get("id") as string;
+
+        if (!id) {
+            return {
+                error: "ID no proporcionado",
+                success: false
+            };
+        }
+
+        // Verificamos si existe antes de intentar actualizar
+        const existe = await prisma.turno.findUnique({
+            where: { id }
+        });
+
+        if (!existe) {
+            return {
+                error: "El turno que intentas eliminar no existe",
+                success: false
+            };
+        }
+
+        // Realizamos el borrado lógico (estado: 0)
+        await prisma.turno.update({
+            where: { id },
+            data: {
+                estado: 2, // Marcamos como completado
+                updatedAt: new Date() // Satisfacemos el campo obligatorio
+            }
+        });
+
+        // Revalidamos la ruta para que la lista de turnos se actualice al instante
+        revalidatePath("/turno");
+
+        return {
+            success: true,
+            data: { id }
+        };
+    } catch (error) {
+        console.error("Error eliminando turno:", error);
+        return {
+            error: error instanceof Error ? error.message : "Error desconocido al eliminar el turno",
+            success: false
+        };
+    }
+}

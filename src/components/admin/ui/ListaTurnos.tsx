@@ -4,7 +4,19 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { MessageCircleMoreIcon} from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useActionState } from "react";
+import { deleteTurno, completedTurno } from "@/actions/turno.actions";
 
+const initialState = {
+    success: false,
+    error: undefined,
+    data: undefined
+};
+const initialStateComplete = {
+    success: false,
+    error: undefined,
+    data: undefined
+};
 
 interface TurnoConRelaciones {
   id: string;
@@ -65,6 +77,8 @@ export default function ListaTurnos({
     );
   };
 
+  const [state, formAction] = useActionState(deleteTurno, initialState);
+  const [stateComplete, formActionComplete] = useActionState(completedTurno, initialStateComplete);
   return (
     <section className="space-y-2 my-2">
       <div>
@@ -95,14 +109,14 @@ export default function ListaTurnos({
               </tr>
             ) : (
               turnos.map((turno) => (
-                <tr key={turno.id} className="hover:bg-blue-50/40 transition-colors">
-                  <td className="p-2 border font-medium text-center">
+                <tr key={turno.id} className="hover:bg-blue-50/40 transition-colors border-2 text-center">
+                  <td className="p-2 font-medium text-center">
                     {new Date(turno.horarioReservado).toLocaleString("es-AR", {
                       day: "2-digit", month: "2-digit", year: "2-digit",
                       hour: "2-digit", minute: "2-digit",
                     })}
                   </td>
-                  <td className="p-2 border flex flex-row gap-5 items-center">
+                  <td className="p-2 flex flex-row gap-5 items-center">
                     <Image src={turno.user.image || "/images/avatar-default.svg"} alt="Avatar" width={40} height={40} className="rounded-full mr-2" />
                     <div>
                       <div className="font-semibold">{turno.user.name || "Invitado"}</div>
@@ -120,7 +134,7 @@ export default function ListaTurnos({
                     ) : "Telefono no registrado"}
                     </div>
                   </td>
-                  <td className="p-2 border">
+                  <td className="p-2 ">
                     <div className="uppercase text-[11px] text-gray-600 font-bold">
                     {turno.vehiculo_servicio.vehiculo?.nombre || "—"}
                     </div>
@@ -136,9 +150,41 @@ export default function ListaTurnos({
                       
                     </div>
                   </td>
-                  <td className="text-center">
+                  <td  className="flex flex-row flex-wrap justify-around gap-5">
                     {turno.estado == 0 && <Button variant={"rojo"} className="" >Cancelado</Button>}
-                    {turno.estado == 1 && <div><Button variant={"amarillo"} className="" >Pendiente</Button> <Button variant={"rojo"} onClick={()=>{window.alert("cancelar turno : "+turno.id)}}>X</Button></div>}
+                    {turno.estado == 1 &&
+                      <div className="flex flex-row flex-wrap justify-around gap-5">
+                        <Button variant={"amarillo"} >Pendiente</Button>
+                        <form action={formAction}>
+                          <input type="hidden" name="id" value={turno.id} />
+                          <Button
+                              onClick={(e) => {
+                                      if (!confirm('¿Estás seguro de cancelar este turno?')) {
+                                          e.preventDefault();
+                                      }
+                                  }}
+                              type="submit"
+                              variant="rojo"
+                          >
+                              X
+                          </Button>
+                        </form>
+                        <form action={formActionComplete}>
+                          <input type="hidden" name="id" value={turno.id} />
+                          <Button
+                              onClick={(e) => {
+                                      if (!confirm('¿Estás seguro de completar este turno?')) {
+                                          e.preventDefault();
+                                      }
+                                  }}
+                              type="submit"
+                              variant="verde"
+                          >
+                              Listo
+                          </Button>
+                        </form>
+                      </div>
+                    }
                     {turno.estado == 2 && <Button variant={"verde"} className="" >Completado</Button>}
                   </td>
                   
@@ -147,6 +193,22 @@ export default function ListaTurnos({
             )}
           </tbody>
         </table>
+        {state.error && (
+                        <p className="text-red-600 text-xs mt-2">{state.error}</p>
+        )}
+        {state.success && (
+            <p className="text-green-600 text-xs mt-2">
+                ✅ Turno cancelado
+            </p>
+        )}
+        {stateComplete.error && (
+            <p className="text-red-600 text-xs mt-2">{stateComplete.error}</p>
+        )}
+        {stateComplete.success && (
+            <p className="text-green-600 text-xs mt-2">
+                ✅ Turno completado
+            </p>
+        )}
       </div>
     </section>
   );
