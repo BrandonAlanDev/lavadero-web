@@ -46,7 +46,7 @@ model turno {
   precioCongelado    Decimal
   seniaCongelada     Decimal
   patente            String
-  estado             Boolean
+  estado             Int
   createdAt          DateTime          @default(now())
   updatedAt          DateTime
   user               user              @relation(fields: [userId], references: [id], onDelete: Cascade, map: "Turno_userId_fkey")

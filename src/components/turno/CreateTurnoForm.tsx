@@ -7,202 +7,148 @@ import { useEffect, useRef, useState } from "react";
 import SeleccionadorHorario from "./SeleccionadorHorario";
 import { Button } from "../ui/button";
 
+// Tipos definidos localmente para claridad
+type VehiculoServicioData = {
+    id: string;
+    vehiculo: { nombre: string | null };
+    servicio: { nombre: string | null };
+    precio: number;
+    duracion: number;
+};
+
+type UsuarioData = {
+    id: string;
+    name: string | null;
+    email: string | null;
+};
+
 const initialState = {
     success: false,
     error: undefined,
     data: undefined,
 };
 
-type Configuracion = {
-    id: string;
-    vehiculo: {
-        id: string;
-        nombre: string | null;
-    };
-    servicio: {
-        id: string;
-        nombre: string | null;
-    };
-    precio: number;
-    duracion: number;
-};
-
-type Usuario = {
-    id: string;
-    name: string | null;
-    email: string | null;
-};
-
-export default function CreateTurnoForm({session} : {session: any}) {
+export default function CreateTurnoForm({ session }: { session: any }) {
     const [state, formAction] = useActionState(createTurno, initialState);
     const formRef = useRef<HTMLFormElement>(null);
-    const [configuraciones, setConfiguraciones] = useState<Configuracion[]>([]);
-    const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedServicio, setSelectedServicio] = useState<string>("");
+    
+    // Estados de datos
+    const [configuraciones, setConfiguraciones] = useState<VehiculoServicioData[]>([]);
+    const [usuarios, setUsuarios] = useState<UsuarioData[]>([]);
+    const [loadingData, setLoadingData] = useState(true);
+    
+    // Estados de selección
+    const [selectedConfigId, setSelectedConfigId] = useState<string>("");
 
+    // Carga de datos iniciales
     useEffect(() => {
-        async function cargarDatos() {
-            try {
-                const result = await obtenerDatosParaTurno();
-                
-                if (result.success && result.data) {
-                    setConfiguraciones(Array.isArray(result.data.configuraciones) ? result.data.configuraciones : []);
-                    setUsuarios(Array.isArray(result.data.usuarios) ? result.data.usuarios : []);
-                } else {
-                    setError(result.error || "Error al cargar datos");
+        let isMounted = true;
+        async function load() {
+            const res = await obtenerDatosParaTurno();
+            if (isMounted) {
+                if (res.success && res.data) {
+                    setConfiguraciones(res.data.configuraciones as any);
+                    setUsuarios(res.data.usuarios as any);
                 }
-            } catch (err) {
-                console.error("❌ Error al cargar datos:", err);
-                setError("Error al cargar datos");
-            } finally {
-                setLoading(false);
+                setLoadingData(false);
             }
         }
-        cargarDatos();
+        load();
+        return () => { isMounted = false; };
     }, []);
 
+    // Feedback visual tras submit
     useEffect(() => {
         if (state.success) {
+            alert("✅ Turno creado correctamente");
             formRef.current?.reset();
-            alert("✅ Turno creado exitosamente!");
-        }
-        if (state.error) {
+            setSelectedConfigId(""); // Reset del selector dependiente
+        } else if (state.error) {
             alert(`❌ Error: ${state.error}`);
         }
-    }, [state.success, state.error]);
+    }, [state]);
 
-    if (loading) {
-        return (
-            <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-gray-500">Cargando...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                <p className="text-red-600 font-medium mb-2">{error}</p>
-                <Button 
-                    onClick={() => window.location.reload()}
-                    variant="amarillo"
-                    className="text-sm"
-                >
-                    Intentar de nuevo
-                </Button>
-            </div>
-        );
-    }
-
-    if (configuraciones.length === 0 || usuarios.length === 0) {
-        return (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <p className="text-yellow-800 font-medium mb-2">⚠️ No hay datos disponibles</p>
-                <div className="text-yellow-700 text-sm space-y-1">
-                    {configuraciones.length === 0 && (
-                        <p>• No hay configuraciones de vehículo x servicio. <a href="/vehiculoXServicio" className="underline">Crear configuraciones</a></p>
-                    )}
-                    {usuarios.length === 0 && (
-                        <p>• No hay usuarios registrados en el sistema.</p>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    // Obtener fecha mínima (hoy)
-    const today = new Date();
-    const minDate = today.toISOString().slice(0, 16);
+    if (loadingData) return <div className="p-8 text-center text-gray-500">Cargando datos del sistema...</div>;
 
     return (
-        <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Nuevo Turno</h2>
+        <div className="bg-white rounded-xl shadow-sm border p-6 max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">Nuevo Turno</h2>
             
-            <form ref={formRef} action={formAction} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="userId" className="block text-sm font-medium mb-1">
-                            Cliente *
-                        </label>
-                        <select
-                            id="userId"
-                            name="userId"
-                            required
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <form ref={formRef} action={formAction} className="space-y-6">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* SELECCIÓN DE USUARIO */}
+                    <div className="space-y-2">
+                        <label htmlFor="userId" className="text-sm font-medium text-gray-700">Cliente</label>
+                        <select 
+                            name="userId" 
+                            id="userId" 
+                            required 
+                            className="w-full p-2.5 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
+                            defaultValue={session.user.role === "USER" ? session.user.id : ""}
                         >
-                            {session.user.role === "USER" &&
-                                <option value={session.user.id}>
-                                    {session.user?.name} {session.user?.email && `(${session.user?.email})`}
-                                </option>}
-                                {session.user.role === "ADMIN" && <>
-                                    <option value="">Seleccione un cliente</option>
-                                    {usuarios.map((u) => (
+                            {session.user.role === "USER" ? (
+                                <option value={session.user.id}>{session.user.name || "Usuario"}</option>
+                            ) : (
+                                <>
+                                    <option value="">-- Seleccionar Cliente --</option>
+                                    {usuarios.map(u => (
                                         <option key={u.id} value={u.id}>
-                                            {u.name} {u.email && `(${u.email})`}
+                                            {u.name} ({u.email})
                                         </option>
                                     ))}
-                                </>}
+                                </>
+                            )}
                         </select>
                     </div>
 
-                    <div>
-                        <label htmlFor="vehiculoServicioId" className="block text-sm font-medium mb-1">
-                            Vehículo y Servicio *
-                        </label>
-                        <select
+                    {/* SELECCIÓN DE SERVICIO */}
+                    <div className="space-y-2">
+                        <label htmlFor="vehiculoServicioId" className="text-sm font-medium text-gray-700">Servicio</label>
+                        <select 
+                            name="vehiculoServicioId" 
                             id="vehiculoServicioId"
-                            name="vehiculoServicioId"
                             required
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            onChange={(e)=>setSelectedServicio(e.target.value)}
+                            className="w-full p-2.5 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
+                            onChange={(e) => setSelectedConfigId(e.target.value)}
+                            value={selectedConfigId}
                         >
-                            <option value="">Seleccione vehículo y servicio</option>
-                            {configuraciones.map((c) => (
+                            <option value="">-- Seleccionar Vehículo y Servicio --</option>
+                            {configuraciones.map(c => (
                                 <option key={c.id} value={c.id}>
-                                    {c.vehiculo.nombre} - {c.servicio.nombre} (${c.precio} - {c.duracion}min)
+                                    {c.vehiculo.nombre} | {c.servicio.nombre} — ${c.precio} ({c.duracion} min)
                                 </option>
                             ))}
                         </select>
                     </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <SeleccionadorHorario 
-                        name="horarioReservado"
-                        vehiculoServicioId={selectedServicio}
-                        // turnoIdAExcluir={turno?.id} // Solo si estás editando pero lo dejo de referencia
-                        // defaultValue={turno?.horarioReservado} // Solo si estás editando pero lo dejo de referencia
-                    />
-
-                    <div>
-                        <label htmlFor="patente" className="block text-sm font-medium mb-1">
-                            Patente *
-                        </label>
-                        <input
-                            type="text"
+                    {/* PATENTE */}
+                    <div className="space-y-2">
+                        <label htmlFor="patente" className="text-sm font-medium text-gray-700">Patente</label>
+                        <input 
+                            type="text" 
+                            name="patente" 
                             id="patente"
-                            name="patente"
                             required
                             maxLength={10}
-                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                            placeholder="ABC123"
+                            placeholder="AA123BB"
+                            className="w-full p-2.5 border rounded-lg bg-gray-50 uppercase focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                     </div>
                 </div>
 
-                {state.error && (
-                    <div className="bg-red-50 border border-red-200 rounded p-3">
-                        <p className="text-red-600 text-sm">{state.error}</p>
-                    </div>
-                )}
+                <hr className="border-gray-100" />
 
-                {state.success && (
-                    <div className="bg-green-50 border border-green-200 rounded p-3">
-                        <p className="text-green-600 text-sm">
-                            ✅ Turno creado correctamente
-                        </p>
+                {/* COMPONENTE DE HORARIOS (Lógica compleja aislada) */}
+                <SeleccionadorHorario 
+                    name="horarioReservado"
+                    vehiculoServicioId={selectedConfigId}
+                />
+
+                {/* Mensajes de error del servidor */}
+                {state.error && (
+                    <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium border border-red-100">
+                        {state.error}
                     </div>
                 )}
 
@@ -214,15 +160,14 @@ export default function CreateTurnoForm({session} : {session: any}) {
 
 function SubmitButton() {
     const { pending } = useFormStatus();
-    
     return (
-        <Button
-            type="submit"
-            variant={pending?"ghost":"celeste"}
+        <Button 
+            type="submit" 
             disabled={pending}
-            className="w-full py-2 px-4 rounded-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="w-full md:w-auto md:min-w-50"
+            variant={pending ? "ghost" : "celeste"}
         >
-            {pending ? "Creando..." : "Crear Turno"}
+            {pending ? "Procesando..." : "Confirmar Reserva"}
         </Button>
     );
 }
