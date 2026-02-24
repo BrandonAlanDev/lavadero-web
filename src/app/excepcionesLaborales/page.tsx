@@ -2,8 +2,12 @@ import { getExcepciones } from "@/actions/excepcionesLaborales.actions";
 import ExcepcionesClient from "@/components/excepcionesLaborales/ExcepcionesClient";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function ExcepcionesLaboralesPage() {
+  const session = await auth();
+  if (!session?.user) { redirect("/login"); }
   const result = await getExcepciones();
 
   // Si hay error, mostrar mensaje

@@ -2,17 +2,26 @@ import { obtenerVehiculosXServicios } from "@/actions/vehiculoXServicio-actions"
 import VehiculoXServicioList from "@/components/vehiculoXServicio/VehiculoXServicioList";
 import CreateVehiculoXServicioForm from "@/components/vehiculoXServicio/CreateVehiculoXServicioForm";
 import { Suspense } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function VehiculoXServicioPage() {
     const result = await obtenerVehiculosXServicios();
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Gestión de Vehículos x Servicios</h1>
-                <p className="text-gray-600">
-                    Configura los precios y duración de cada servicio por tipo de vehículo
-                </p>
+        <div className="container mx-auto p-6 max-w-7xl mt-20">
+            <div className="flex flex-row justify-between items-center mb-6">
+                <div className="flex flex-col gap-5">
+                    <h1 className="text-3xl font-bold mb-2">Gestionar servicios por vehículo
+                    </h1>
+                    <p className="text-gray-600">
+                        Configura los precios y duración de cada servicio por cada tipo de vehículo
+                    </p>
+                </div>
+                <div className="flex flex-row gap-5">
+                    <Link href="/servicio"><Button variant={"celeste"}>Ir a Servicios</Button></Link>
+                    <Link href="/vehiculo"><Button variant={"celeste"}>Ir a Vehiculos</Button></Link>
+                </div>
             </div>
 
             <div className="mb-8">

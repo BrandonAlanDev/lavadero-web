@@ -132,15 +132,6 @@ model margenes_laborales {
   @@index([diaId])
 }
 
-model bicicleta {
-  id       Int      @id @default(autoincrement())
-  marca    String
-  modelo   String
-  rodado   Int
-  color    String?
-  creadaEn DateTime @default(now())
-}
-
 enum user_role {
   USER
   ADMIN
