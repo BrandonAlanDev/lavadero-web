@@ -10,6 +10,7 @@ import { Button } from "../ui/button";
 import { getUserTurnos, updateProfile, cancelTurno } from "@/actions/user-dashboard";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 // Definición de tipos basada en lo que devuelve tu action
 type TurnoWithDetails = Awaited<ReturnType<typeof getUserTurnos>>[0];
@@ -243,7 +244,7 @@ function TurnosList({ turnos, loading }: { turnos: TurnoWithDetails[], loading: 
         </div>
         <h3 className="text-lg font-medium text-gray-900">No tienes turnos</h3>
         <p className="text-gray-500 mb-6">Aún no has reservado ningún servicio.</p>
-        <Button variant="celeste">Reservar Turno</Button>
+        <Link href="/turno"><Button variant="celeste">Reservar Turno</Button></Link>
       </div>
     );
   }

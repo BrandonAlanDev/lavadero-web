@@ -213,3 +213,37 @@ export const deleteservicio = async (prevState: ActionState, formData: FormData)
         };
     }
 };
+
+export const getVehiculosConServicios = async (): Promise<ActionState> => {
+  try {
+    const vehiculos = await prisma.vehiculo.findMany({
+      where: {
+        estado: true,
+      },
+      include: {
+        vehiculo_servicio: {
+          where: {
+            estado: true, // Traemos solo las relaciones activas
+          },
+          include: {
+            servicio: true, // Incluimos la data del servicio en sí
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      success: true,
+      data: vehiculos,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      error: "Error al obtener los vehículos y servicios",
+      success: false,
+    };
+  }
+};

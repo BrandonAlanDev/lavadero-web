@@ -19,42 +19,80 @@ export function Header({ session }: HeaderProps) {
                 shadow-md w-full"
     >
       <div className="container flex items-center justify-between h-16 mx-auto px-4 select-none">
+        
         <Link href="/#home" className="flex items-center gap-2">
           <Image src="/images/logopng.png" alt="" width={'64'} height={'64'}/>
           <span className="hidden md:block text-xl font-semibold text-foreground">
             Chapa{" "}<span className="text-primary">Detail</span>
           </span>
         </Link>
+
+        {session?.user.role==="ADMIN" ? (
+          <>
+            <nav className="hidden md:flex items-center gap-8">
+              <Link href="/servicio" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="celeste" size="sm">
+                  Servicios
+                </Button>
+              </Link>
+              <Link href="/vehiculo" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="celeste" size="sm">
+                  Vehículos
+                </Button>
+              </Link>
+              <Link href="/vehiculoXServicio" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="celeste" size="sm">
+                  Asignar Servicios
+                </Button>
+              </Link>
+              <Link href="/turno" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="celeste" size="sm">
+                    Crear turnos
+                </Button>
+              </Link>
+              <Link href="/admin" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="celeste" size="sm">
+                    Panel admin
+                </Button>
+              </Link>
+            </nav>
+          </>
+        ):(
+          <>
+            <nav className="hidden md:flex items-center gap-8">
+              <Link href="/#servicios" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="link" size="sm">
+                  Servicios
+                </Button>
+              </Link>
+
+              <Link href="/#nosotros" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="link" size="sm">
+                  Nosotros
+                </Button>
+              </Link>
+
+              <Link href="/#ubicacion" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="link" size="sm">
+                  Ubicación
+                </Button>
+              </Link>
+
+              <Link href={session ? "/turno" : "/login"} className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Button variant="celeste" size="sm">
+                    Turnos
+                </Button>
+              </Link>
+            </nav>
+          </>
+        )}
         
-        <nav className="hidden md:flex items-center gap-8">
-          <Link href="/#servicios" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="link" size="sm">
-              Servicios
-            </Button>
-          </Link>
-
-          <Link href="/#nosotros" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="link" size="sm">
-              Nosotros
-            </Button>
-          </Link>
-
-          <Link href="/#ubicacion" className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="link" size="sm">
-              Ubicación
-            </Button>
-          </Link>
-
-          <Link href={session ? "/turno" : "/login"} className=" cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <Button variant="celeste" size="sm">
-                Turnos
-            </Button>
-          </Link>
-        </nav>
+        
+        
 
         {session ? (
           <div className="flex items-center gap-4">
-            <span className="text-sm"><Link className="flex flex-row items-center" href="/dashboard"><Image src={session.user?.image || "/images/avatar-default.svg"} alt="" className="rounded-full" width={'32'} height={'32'}/><Button variant="link" size="sm">{session.user?.name}</Button></Link></span>
+            <span className="text-sm"><Link className="flex flex-row items-center" href={session?.user.role === "ADMIN" ? "/admin" : "/dashboard"}><Image src={session?.user.image || "/images/avatar-default.svg"} alt="" className="rounded-full" width={'32'} height={'32'}/><Button variant="link" size="sm">{session?.user.name}</Button></Link></span>
             <form action={handleSignOut}>
               <Button variant="rojo" size="sm" type="submit">Salir</Button>
             </form>
