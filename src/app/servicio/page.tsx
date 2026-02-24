@@ -2,17 +2,29 @@ import { getServicios } from "@/actions/servicio-actions";
 import ServicioList from "@/components/servicio/ServicioList";
 import CreateServicioForm from "@/components/servicio/CreateServicioForm";
 import { Suspense } from "react";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function ServiciosPage() {
+    const session = await auth();
+    if (!session?.user) { redirect("/login"); }
     const result = await getServicios();
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Gestión de Servicios</h1>
-                <p className="text-gray-600">
-                    Administra los servicios disponibles para tus vehículos
-                </p>
+        <div className="container mx-auto p-6 max-w-7xl mt-20">
+            <div className="flex flex-row justify-between items-center mb-6">
+                <div className="flex flex-col gap-5">
+                    <h1 className="text-3xl font-bold mb-2">Gestión de Servicios</h1>
+                    <p className="text-gray-600">
+                        Administra los servicios disponibles para tus vehículos
+                    </p>
+                </div>
+                <div className="flex flex-row gap-5">
+                    <Link href="/vehiculo"><Button variant={"celeste"}>Ir a Vehiculos</Button></Link>
+                    <Link href="/vehiculoXServicio"><Button variant={"celeste"}>Asignar servicios</Button></Link>
+                </div>
             </div>
 
             {/* Formulario de creación */}

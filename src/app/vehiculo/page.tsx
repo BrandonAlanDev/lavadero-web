@@ -2,17 +2,30 @@ import { getVehiculos } from "@/actions/vehiculo-actions";
 import VehiculoList from "@/components/vehiculo/VehiculoList";  
 import CreateVehiculoForm from "@/components/vehiculo/CreateVehiculoForm";  
 import { Suspense } from "react";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function VehiculosPage() {  
+    const session = await auth();
+    if (!session?.user) { redirect("/login"); }
     const result = await getVehiculos();
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Gestión de Vehículos</h1>
+        <div className="container mx-auto p-6 max-w-7xl mt-20">
+
+            <div className="flex flex-row justify-between items-center mb-6">
+                <div className="flex flex-col gap-5">
+                    <h1 className="text-3xl font-bold mb-2">Gestión de Vehículos</h1>
                 <p className="text-gray-600">
                     Administra los tipos de vehículos disponibles para tus servicios
                 </p>
+                </div>
+                <div className="flex flex-row gap-5">
+                    <Link href="/servicio"><Button variant={"celeste"}>Ir a Servicios</Button></Link>
+                    <Link href="/vehiculoXServicio"><Button variant={"celeste"}>Asignar servicios</Button></Link>
+                </div>
             </div>
 
            
