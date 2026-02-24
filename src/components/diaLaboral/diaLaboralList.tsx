@@ -108,8 +108,8 @@ export function DiaLaboralList({
             key={dia.id}
             className={`border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${
               dia.estado
-                ? "border-green-200 bg-linear-to-br from-amber-100 to-white "
-                : "border-gray-200  bg-linear-to-br from-amber-100 to-whiteopacity-75"
+                ? "border-green-200 bg-linear-to-br from-blue-50 to-white "
+                : "border-gray-200  bg-linear-to-br from-gray-50 to-whiteopacity-75"
             }`}
           >
             <CardHeader className="space-y-3">

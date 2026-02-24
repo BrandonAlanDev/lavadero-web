@@ -1,8 +1,28 @@
 "use client";
 import { motion } from "framer-motion";
 import { MapPin, Phone, Clock } from "lucide-react";
+import { useState, useEffect, use } from "react";
+import { getHorariosCompactos } from "@/actions/margenesHorario.actions";
+
 
 export function LocationSection() {
+  const [cargando,setCargando] = useState(true);
+  const [horarios,setHorarios] = useState(["Cargando..."]);
+  useEffect(() => {
+    try {
+      getHorariosCompactos().then((res) => {
+        if (res.length > 0 ) {
+        setHorarios(res);
+        } else {
+          setHorarios(["Cerrado"]);
+        }
+    });
+    }catch(error){
+      setHorarios(["Error al cargar horarios"]);
+    }finally{
+      setCargando(false);
+    }
+  },[])
   return (
     <section id="ubicacion" className="py-20 md:py-32 bg-celeste/10 justify-center items-center mx-auto">
       <div className="container justify-around items-center mx-auto">
@@ -55,8 +75,15 @@ export function LocationSection() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Horarios</h3>
-                <p className="text-muted-foreground">Lun - Sáb: 8:00 - 19:00</p>
-                <p className="text-muted-foreground">Dom: 9:00 - 14:00</p>
+                {cargando ? (
+                  <p className="text-muted-foreground">Cargando horarios...</p>
+                ) : (
+                  horarios.map((horario, index) => (
+                    <p key={index} className="text-muted-foreground">
+                      {horario}
+                    </p>
+                  ))
+                )}
               </div>
             </div>
           </motion.div>

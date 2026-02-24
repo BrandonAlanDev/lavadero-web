@@ -3,10 +3,11 @@ import TurnoList from "@/components/turno/TurnoList";
 import CreateTurnoForm from "@/components/turno/CreateTurnoForm";
 import { Suspense } from "react";
 import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function TurnoPage() {
     const session = await auth();
-
+    if (!session?.user) { redirect("/login"); }
     const result = (session?.user.role === "ADMIN") ? await getTurnos() : await getTurnos({userId:session?.user.id});
 
     return (

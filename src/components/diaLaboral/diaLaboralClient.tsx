@@ -155,7 +155,7 @@ export function DiaLaboralClient({ initialData }: DiaLaboralClientProps) {
 
       {/* Diálogo para crear/editar día laboral */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] border-4 border-cyan-400 shadow-2xl bg-[#FFF8DC]">
+        <DialogContent className="sm:max-w-[600px] border-4 border-cyan-400 shadow-2xl bg-[#f6fbff]">
           <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-cyan-500 via-cyan-400 to-cyan-300 rounded-t-2xl" />
 
           <DialogHeader className="space-y-4 pt-2">
