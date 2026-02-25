@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { serializeData } from "@/lib/utils";
 
 export type ActionState = {
     error?: string;
@@ -63,7 +64,7 @@ export const getVehiculos = async (): Promise<ActionState> => {
 
         return {
             success: true,
-            data: vehiculo
+            data: serializeData(vehiculo)
         };
 
     } catch (error) {
@@ -105,7 +106,7 @@ export const createVehiculo = async (prevState: ActionState, formData: FormData)
         
         return {
             success: true,
-            data: nuevoVehiculo
+            data: serializeData(nuevoVehiculo)
         };
     } catch (error) {
         return {
@@ -158,7 +159,7 @@ export const actualizarVehiculo = async (prevState: ActionState, formData: FormD
         
         return {
             success: true,
-            data: vehiculoActualizado
+            data: serializeData(vehiculoActualizado)
         };
     } catch (error) {
         return {

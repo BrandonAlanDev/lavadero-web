@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { addMinutes, format, isBefore, isEqual } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { serializeData } from "@/lib/utils";
 
 const TIMEZONE = "America/Argentina/Buenos_Aires";
 

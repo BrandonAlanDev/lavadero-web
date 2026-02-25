@@ -1,6 +1,7 @@
 "use client";
 
-import { actualizarVehiculoXServicio, obtenerVehiculosXServicios } from "@/actions/vehiculoXServicio-actions";
+import { actualizarVehiculoXServicio} from "@/actions/vehiculoXServicio-actions";
+import { obtenerCatalogosParaModalVXS } from "@/actions/vehiculoXServicio-actions";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef, useState } from "react";
@@ -53,10 +54,15 @@ export default function EditVehiculoXServicioModal({ item, onClose }: EditVehicu
 
     useEffect(() => {
         async function cargarDatos() {
-            const result = await obtenerVehiculosXServicios();
+            setLoading(true);
+            // Usamos la acción que trae las listas de opciones para los selects
+            const result = await obtenerCatalogosParaModalVXS(); 
+            
             if (result.success && result.data) {
                 setVehiculos(result.data.vehiculos);
                 setServicios(result.data.servicios);
+            } else {
+                console.error(result.error);
             }
             setLoading(false);
         }
@@ -74,7 +80,7 @@ export default function EditVehiculoXServicioModal({ item, onClose }: EditVehicu
     }, [state.success, state.error, onClose]);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
@@ -93,7 +99,21 @@ export default function EditVehiculoXServicioModal({ item, onClose }: EditVehicu
                         <p className="text-gray-500">Cargando...</p>
                     ) : (
                         <form ref={formRef} action={formAction} className="space-y-4">
+
+                            {/* Campo oculto del ID */}
                             <input type="hidden" name="id" value={item.id} />
+
+                            {/* SECCIÓN DE ERROR (Mejorada) */}
+                            {state.error && (
+                                <div className="bg-red-100 border-l-4 border-red-500 p-4 mb-4 animate-pulse">
+                                    <div className="flex items-center">
+                                        <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                        <p className="text-red-700 text-sm font-bold">{state.error}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -201,12 +221,6 @@ export default function EditVehiculoXServicioModal({ item, onClose }: EditVehicu
                                     />
                                 </div>
                             </div>
-
-                            {state.error && (
-                                <div className="bg-red-50 border border-red-200 rounded p-3">
-                                    <p className="text-red-600 text-sm">{state.error}</p>
-                                </div>
-                            )}
 
                             <div className="flex gap-2 pt-4">
                                 <button
