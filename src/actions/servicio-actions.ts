@@ -2,12 +2,14 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { serializeData } from "@/lib/utils";
 
 export type ActionState = {
     error?: string;
     success?: boolean;
     data?: any;
 };
+
 
 // Función helper para limpiar y validar URLs de imágenes
 function cleanImageUrl(url: string | null): string | null {
@@ -38,35 +40,36 @@ function cleanImageUrl(url: string | null): string | null {
 }
 
 export const getServicios = async (): Promise<ActionState> => {
-    try {
-        const servicio = await prisma.servicio.findMany({
-            where: {
-                estado: true
-            },
-            include: {
-                vehiculo_servicio: {
-                    include: {
-                        servicio: true
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
-        });
-
-        return {
-            success: true,
-            data: servicio
-        };
-
-    } catch (error) {
-        return {
-            error: "Error al obtener los servicios",
-            success: false
+  try {
+    const servicio = await prisma.servicio.findMany({
+      where: {
+        estado: true
+      },
+      include: {
+        vehiculo_servicio: {
+          include: {
+            servicio: true
+          }
         }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return {
+      success: true,
+      data: serializeData(servicio)
+    };
+
+  } catch (error) {
+    return {
+      error: "Error al obtener los servicios",
+      success: false
     }
+  }
 };
+
 
 export const createServicio = async (prevState: ActionState, formData: FormData): Promise<ActionState> => {
     try {
@@ -97,7 +100,7 @@ export const createServicio = async (prevState: ActionState, formData: FormData)
         revalidatePath('/servicio');
         return {
             success: true,
-            data: nuevoServicio
+            data: serializeData(nuevoServicio)
         };
     } catch (error) {
         return {
@@ -148,7 +151,7 @@ export const actualizarServicio = async (prevState: ActionState, formData: FormD
         revalidatePath('/servicio');
         return {
             success: true,
-            data: servicioActualizado
+            data:  serializeData(servicioActualizado)
         };
     } catch (error) {        
         return {
@@ -223,10 +226,10 @@ export const getVehiculosConServicios = async (): Promise<ActionState> => {
       include: {
         vehiculo_servicio: {
           where: {
-            estado: true, // Traemos solo las relaciones activas
+            estado: true,
           },
           include: {
-            servicio: true, // Incluimos la data del servicio en sí
+            servicio: true,
           },
         },
       },
@@ -235,9 +238,12 @@ export const getVehiculosConServicios = async (): Promise<ActionState> => {
       },
     });
 
+    // Convertimos Decimal antes de retornar par que nextjs no tenga problemas al serializar los datos de Prisma
+    const vehiculosSerializados = serializeData(vehiculos);
+
     return {
       success: true,
-      data: vehiculos,
+      data: vehiculosSerializados,
     };
   } catch (error) {
     console.error(error);
