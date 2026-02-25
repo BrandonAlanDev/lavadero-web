@@ -4,6 +4,7 @@ import { deleteVehiculoXServicio } from "@/actions/vehiculoXServicio-actions";
 import { useActionState } from "react";
 import { useState } from "react";
 import EditVehiculoXServicioModal from "./EditVehiculoXServicioModal";
+import Image from "next/image";
 
 const initialState = {
     success: false,
@@ -80,13 +81,35 @@ function VehiculoXServicioCard({ item }: { item: VehiculoXServicio }) {
         <>
             <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
                 {/* Header con nombres */}
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white">
-                    <h3 className="font-semibold text-lg mb-1">
-                        {item.vehiculo.nombre}
-                    </h3>
-                    <p className="text-blue-100 text-sm">
-                        {item.servicio.nombre}
-                    </p>
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white flex flex-row items-center justify-between gap-4 overflow-hidden">
+                    <div className="flex flex-col">
+                        <h3 className="font-semibold text-lg mb-1">
+                            {item.vehiculo.nombre}
+                        </h3>
+                        <p className="text-blue-100 text-sm">
+                            {item.servicio.nombre}
+                        </p>
+                    </div>
+                    <div className="flex flex-row gap-2 items-center">
+                        {item.vehiculo.srcImage && (
+                            <Image
+                                src={item.vehiculo.srcImage}
+                                alt={item.vehiculo.nombre || "Imagen del vehículo"}
+                                width={64}
+                                height={48}
+                                className="rounded-full border-2 border-white w-16 h-12 object-cover"
+                            />
+                        )}
+                        {item.servicio.srcImage && (
+                            <Image
+                                src={item.servicio.srcImage}
+                                alt={item.servicio.nombre || "Imagen del servicio"}
+                                width={64}
+                                height={48}
+                                className="rounded-full border-2 border-white w-16 h-12 object-cover"
+                            />
+                        )}
+                    </div>
                 </div>
 
                 {/* Contenido */}

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { serializeData } from "@/lib/utils";
 
 export type ActionState = {
     error?: string;
@@ -56,7 +57,7 @@ export async function createVehiculoXServicio(
 
         return {
             success: true,
-            data: vehiculoServicio
+            data: serializeData(vehiculoServicio)
         };
 
     } catch (error) {
@@ -74,17 +75,39 @@ export async function actualizarVehiculoXServicio(
   
     try {
         const id = formData.get("id");
+        const vehiculoId = String(formData.get("id_vehiculo"));
+        const servicioId = String(formData.get("id_servicio"));
         
-        if (!id) {
+        if (!id) return { error: "ID no proporcionado", success: false };
+
+        // 1. VALIDACIÓN DE DUPLICADOS:
+        // Buscamos si existe OTRO registro con la misma combinación pero distinto ID
+        const duplicado = await prisma.vehiculo_servicio.findFirst({
+            where: {
+                vehiculoId: vehiculoId,
+                servicioId: servicioId,
+                estado: true, // Solo nos importan los que están activos
+                NOT: {
+                    id: String(id) // Excluimos el registro actual que estamos editando
+                }
+            },
+            include: {
+                vehiculo: true,
+                servicio: true
+            }
+        });
+
+        if (duplicado) {
             return {
-                error: "ID no proporcionado",
-                success: false
+                success: false,
+                error: `Ya existe una configuración para "${duplicado.vehiculo.nombre}" con el servicio "${duplicado.servicio.nombre}".`
             };
         }
 
+        // 2. Preparar datos para actualización
         const data = {
-            vehiculoId: String(formData.get("id_vehiculo")),
-            servicioId: String(formData.get("id_servicio")),
+            vehiculoId,
+            servicioId,
             duracion: Number(formData.get("duracionMinutos")),
             precio: Number(formData.get("precio")),
             descuento: Number(formData.get("descuento") || 0),
@@ -96,12 +119,7 @@ export async function actualizarVehiculoXServicio(
             where: { id: String(id) }
         });
 
-        if (!existe) {
-            return {
-                error: "Vehículo x Servicio no encontrado",
-                success: false
-            };
-        }
+        if (!existe) return { error: "Configuración no encontrada", success: false };
 
         const vehiculoXServicio = await prisma.vehiculo_servicio.update({
             where: { id: String(id) }, 
@@ -112,7 +130,7 @@ export async function actualizarVehiculoXServicio(
 
         return {
             success: true,
-            data: vehiculoXServicio
+            data: serializeData(vehiculoXServicio)
         };
 
     } catch (error) {
@@ -230,7 +248,7 @@ export async function obtenerVehiculosXServicios(params?: {
         });
         return {
             success: true,
-            data: vehiculosXServicios  // ← ARRAY de configuraciones
+            data: serializeData(vehiculosXServicios)  // ← ARRAY de configuraciones
         };
     } catch (error) {
         return {
@@ -265,5 +283,24 @@ export async function obtenerVehiculosYServicios(): Promise<ActionState> {
             error: "Error al obtener vehículos y servicios",
             success: false
         };
+    }
+}
+
+export async function obtenerCatalogosParaModalVXS() {
+    try {
+        const [vehiculos, servicios] = await Promise.all([
+            prisma.vehiculo.findMany({ where: { estado: true } }),
+            prisma.servicio.findMany({ where: { estado: true } })
+        ]);
+
+        return {
+            success: true,
+            data: {
+                vehiculos: serializeData(vehiculos),
+                servicios: serializeData(servicios)
+            }
+        };
+    } catch (error) {
+        return { success: false, error: "Error al cargar catálogos" };
     }
 }

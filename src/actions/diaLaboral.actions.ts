@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { serializeData } from "@/lib/utils";
 
 export type ActionState = {
   success: boolean;
