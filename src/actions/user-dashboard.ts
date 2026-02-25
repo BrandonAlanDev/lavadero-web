@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { serializeData } from "@/lib/utils";
 
 
 // Definimos el estado de retorno para saber si falló

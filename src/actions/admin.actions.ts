@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";;
+import { serializeData } from "@/lib/utils";
 
 /*
   devuelve:
@@ -51,19 +52,7 @@ export async function obtenerTurnos(params: {
     });
 
     // TRANSFORMACIÓN: Convertimos Decimal a Number para que Next.js no se queje
-    const turnos = turnosRaw.map(turno => ({
-      ...turno,
-      // Convertimos los Decimal de la tabla 'turno'
-      precioCongelado: turno.precioCongelado.toNumber(),
-      seniaCongelada: turno.seniaCongelada.toNumber(),
-      vehiculo_servicio: {
-        ...turno.vehiculo_servicio,
-        // Convertimos los Decimal de la tabla 'vehiculo_servicio'
-        precio: turno.vehiculo_servicio.precio.toNumber(),
-        descuento: turno.vehiculo_servicio.descuento.toNumber(),
-        senia: turno.vehiculo_servicio.senia.toNumber(),
-      }
-    }));
+    const turnos = serializeData(turnosRaw);
 
     return turnos;
   } catch (error) {

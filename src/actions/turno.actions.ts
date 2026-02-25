@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { addMinutes } from "date-fns";
+import { serializeData } from "@/lib/utils";
 
 const TIMEZONE = "America/Argentina/Buenos_Aires";
 
