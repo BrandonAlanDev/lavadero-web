@@ -5,6 +5,7 @@ import { createServicio } from "@/actions/servicio-actions";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef } from "react";
+import { Button } from "../ui/button";
 
 const initialState = {
     success: false,
@@ -85,12 +86,13 @@ function SubmitButton() {
     const { pending } = useFormStatus();
     
     return (
-        <button
+        <Button
             type="submit"
             disabled={pending}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            variant={pending ? "blanco" : "celeste"}
+            className="w-full disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
             {pending ? "Creando..." : "Crear Servicio"}
-        </button>
+        </Button>
     );
 }
