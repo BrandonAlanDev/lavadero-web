@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useState } from "react";
 import EditTurnoModal from "./EditarTurnoModal";
 import { Button } from "../ui/button";
+import { useMemo } from "react";
 
 const initialState = {
     success: false,
@@ -45,7 +46,6 @@ type Turno = {
 
 export default function TurnoList({ session, turnos }: { session: any; turnos: Turno[] }) {
     if (!Array.isArray(turnos)) {
-        console.error("TurnoList: turnos no es un array", turnos);
         return (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-red-600">Error: datos inválidos</p>
@@ -53,22 +53,84 @@ export default function TurnoList({ session, turnos }: { session: any; turnos: T
         );
     }
 
+    // --- LÓGICA DE FILTRADO Y ORDENAMIENTO ---
+    const { turnosHoy, turnosRestantes } = useMemo(() => {
+        const hoy = new Date().toDateString();
+
+        // 1. Separamos los de hoy del resto
+        const hoyList: Turno[] = [];
+        const restoList: Turno[] = [];
+
+        turnos.forEach((t) => {
+            const fechaTurno = new Date(t.horarioReservado).toDateString();
+            if (fechaTurno === hoy) {
+                hoyList.push(t);
+            } else {
+                restoList.push(t);
+            }
+        });
+
+        // 2. Ordenamos: Hoy (del más temprano al más tarde para trabajar mejor)
+        hoyList.sort((a, b) => 
+            new Date(a.horarioReservado).getTime() - new Date(b.horarioReservado).getTime()
+        );
+
+        // 3. Ordenamos: Resto (del más nuevo al más viejo, como pediste)
+        restoList.sort((a, b) => 
+            new Date(b.horarioReservado).getTime() - new Date(a.horarioReservado).getTime()
+        );
+
+        return { turnosHoy: hoyList, turnosRestantes: restoList };
+    }, [turnos]);
+
     if (turnos.length === 0) {
         return (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
                 <p className="text-gray-600">No hay turnos reservados</p>
-                <p className="text-sm text-gray-500 mt-2">
-                    Crea un nuevo turno para comenzar
-                </p>
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {turnos.map((turno) => (
-                <TurnoCard session={session} key={turno.id} turno={turno} />
-            ))}
+        <div className="space-y-10">
+            {/* SECCIÓN: HOY */}
+            <section>
+                <div className="flex items-center gap-2 mb-4">
+                    <span className="flex h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                    <h2 className="text-xl font-bold text-gray-800">Turnos de Hoy</h2>
+                    <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                        {turnosHoy.length}
+                    </span>
+                </div>
+                
+                {turnosHoy.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {turnosHoy.map((turno: Turno) => (
+                            <TurnoCard session={session} key={turno.id} turno={turno} />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-500 italic bg-gray-50 p-4 rounded-lg border border-dashed text-sm">
+                        No hay turnos programados para el día de hoy.
+                    </p>
+                )}
+            </section>
+
+            <hr className="border-gray-200" />
+
+            {/* SECCIÓN: RESTO (Historial y Futuros) */}
+            <section>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Otros Turnos</h2>
+                {turnosRestantes.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {turnosRestantes.map((turno: Turno) => (
+                            <TurnoCard session={session} key={turno.id} turno={turno} />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-gray-500 text-sm">No hay más turnos en el sistema.</p>
+                )}
+            </section>
         </div>
     );
 }
@@ -163,9 +225,10 @@ function TurnoCard({session, turno }: { session: any; turno: Turno }) {
 
                     {/* Acciones */}
                     <div className="flex gap-2 pt-3">
-                        {session?.user.role === "ADMIN" &&
+                        {(session?.user.role === "ADMIN" && isPasado) &&
                         <form className="w-full flex flex-wrap" action={formActionComplete}>
                             <input type="hidden" name="id" value={turno.id} />
+                        
                         <Button
                             onClick={(e) => {
                                     if (!confirm('¿Estás seguro de completar este turno?')) {
@@ -173,13 +236,21 @@ function TurnoCard({session, turno }: { session: any; turno: Turno }) {
                                     }
                                 }}
                             type="submit"
-                            variant={isPasado ? "verde" : "celeste"}
+                            variant={"verde"}
                             className="flex-1 py-2 rounded text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            {isPasado ? "Completado" : "Editar"}
+                            Completar
                         </Button></form>}
+                        {(session?.user.role === "ADMIN" && !isPasado) &&
+                        <Button
+                            onClick={() => setShowEditModal(true) }
+                            variant={"celeste"}
+                            className="flex-1 py-2 rounded text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            Editar
+                        </Button>}
                         {session?.user.role !== "ADMIN" && <Button
-                            onClick={() => setShowEditModal(true)}
+                            onClick={isPasado ? () => {} : () => setShowEditModal(true) }
                             variant={isPasado ? "ghost" : "celeste"}
                             disabled={isPasado}
                             className="flex-1 py-2 rounded text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"

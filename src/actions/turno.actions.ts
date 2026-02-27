@@ -168,12 +168,12 @@ export async function getTurnos(params?: { userId?: string; fecha?: string }): P
             orderBy: { horarioReservado: 'asc' }
         });
 
+        const serializedTurnos = serializeData(turnos);
+
         return {
             success: true,
-            data: turnos.map(t => ({
+            data: serializedTurnos.map(t => ({
                 ...t,
-                precioCongelado: Number(t.precioCongelado),
-                seniaCongelada: Number(t.seniaCongelada),
                 // Importante: toZonedTime aquí si vas a mostrar la hora en un componente que no maneja TZ
                 horarioReservado: t.horarioReservado 
             }))
