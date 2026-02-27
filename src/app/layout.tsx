@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LayoutComponent from "@/components/LayoutComponent";
-import { auth} from "@/auth";
+import { auth } from "@/auth";
+// 1. Importa el cargador
+import NextTopLoader from 'nextjs-toploader';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +31,17 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Pasa sesión al componente de cliente */}
-        <LayoutComponent session={session} children={children}/>
+        {/* 2. Implementa el loader aquí */}
+        <NextTopLoader 
+          color="#6fa9da" // Tu color celeste característico
+          showSpinner={true}
+          height={3}
+          zIndex={9999}
+        />
+        
+        <LayoutComponent session={session}>
+            {children}
+        </LayoutComponent>
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { deleteVehiculo } from "@/actions/vehiculo-actions";
 import { useActionState } from "react";
 import { useState } from "react";
 import EditVehiculoModal from "./EditVehiculoModal";
+import { Button } from "../ui/button";
 
 const initialState = {
     success: false,
@@ -95,26 +96,28 @@ function VehiculoCard({ vehiculo }: { vehiculo: Vehiculo }) {
                     </div>
 
                     <div className="flex gap-2">
-                        <button
+                        <Button
                             onClick={() => setShowEditModal(true)}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+                            variant={"celeste"}
+                            className="flex-1"
                         >
                             Editar
-                        </button>
+                        </Button>
                         
                         <form action={formAction}>
                             <input type="hidden" name="id" value={vehiculo.id} />
-                            <button
+                            <Button
                                 type="submit"
+                                variant={"rojo"}
                                 onClick={(e) => {
                                     if (!confirm('¿Estás seguro de dar de baja este vehículo?')) {
                                         e.preventDefault();
                                     }
                                 }}
-                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                                className=""
                             >
                                 Dar de baja
-                            </button>
+                            </Button>
                         </form>
                     </div>
 
