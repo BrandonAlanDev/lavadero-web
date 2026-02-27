@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useState } from "react";
 import EditVehiculoXServicioModal from "./EditVehiculoXServicioModal";
 import Image from "next/image";
+import { Button } from "../ui/button";
 
 const initialState = {
     success: false,
@@ -81,12 +82,12 @@ function VehiculoXServicioCard({ item }: { item: VehiculoXServicio }) {
         <>
             <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
                 {/* Header con nombres */}
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 text-white flex flex-row items-center justify-between gap-4 overflow-hidden">
+                <div className="bg-gradient-to-r from-cyan-50 to-slate-200 p-4 text-slate-900 flex flex-row items-center justify-between gap-4 overflow-hidden">
                     <div className="flex flex-col">
                         <h3 className="font-semibold text-lg mb-1">
                             {item.vehiculo.nombre}
                         </h3>
-                        <p className="text-blue-100 text-sm">
+                        <p className="text-slate-600 text-sm">
                             {item.servicio.nombre}
                         </p>
                     </div>
@@ -158,26 +159,28 @@ function VehiculoXServicioCard({ item }: { item: VehiculoXServicio }) {
 
                     {/* Acciones */}
                     <div className="flex gap-2 mt-4">
-                        <button
+                        <Button
                             onClick={() => setShowEditModal(true)}
-                            className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors text-sm font-medium"
+                            variant={"celeste"}
+                            className="flex-1 text-sm font-medium"
                         >
                             Editar
-                        </button>
+                        </Button>
                         
                         <form action={formAction}>
                             <input type="hidden" name="id" value={item.id} />
-                            <button
+                            <Button
                                 type="submit"
+                                variant="rojo"
                                 onClick={(e) => {
                                     if (!confirm('¿Estás seguro de dar de baja esta configuración?')) {
                                         e.preventDefault();
                                     }
                                 }}
-                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                                className="px-4 py-2 text-sm font-medium"
                             >
                                 Eliminar
-                            </button>
+                            </Button>
                         </form>
                     </div>
 
