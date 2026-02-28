@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { addMinutes, format, isBefore, isEqual, startOfDay } from "date-fns";
+import { addMinutes, format, isBefore, isEqual } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
 const TIMEZONE = "America/Argentina/Buenos_Aires";
@@ -13,16 +13,16 @@ export type SlotHorario = {
 };
 
 export async function obtenerHorariosDisponibles(
-  fechaString: string,
+  fechaString: string, // Ej: "2024-05-20"
   vehiculoServicioId: string,
   turnoIdAExcluir?: string
 ) {
   try {
-    // 1. Configurar fechas límites en UTC para la consulta a Prisma
-    // Esto asegura que traigamos todos los turnos del día sin importar el desfase
+    // Generamos objetos Date absolutos (UTC) que representan la medianoche y fin del día en Argentina
     const inicioBusqueda = fromZonedTime(`${fechaString} 00:00:00`, TIMEZONE);
     const finBusqueda = fromZonedTime(`${fechaString} 23:59:59`, TIMEZONE);
 
+    // Para saber qué día de la semana es localmente en Argentina
     const diaZonificado = toZonedTime(inicioBusqueda, TIMEZONE);
     const diaSemana = diaZonificado.getDay();
 
@@ -60,46 +60,51 @@ export async function obtenerHorariosDisponibles(
       })
     ]);
 
-    // NORMALIZACIÓN: Convertimos los turnos de la DB (UTC) a la zona horaria local para comparar
+    // Prisma devuelve fechas en UTC absolutas. Calculamos el fin de cada turno.
+    // No necesitamos convertirlas a Argentina para comparar, las compararemos en UTC
     const turnosExistentes = turnosRaw.map(t => ({
-      inicio: toZonedTime(t.horarioReservado, TIMEZONE),
-      fin: addMinutes(toZonedTime(t.horarioReservado, TIMEZONE), t.vehiculo_servicio.duracion)
+      inicio: t.horarioReservado, 
+      fin: addMinutes(t.horarioReservado, t.vehiculo_servicio.duracion)
     }));
 
     const excepciones = excepcionesRaw.map(e => ({
-      desde: toZonedTime(e.desde, TIMEZONE),
-      hasta: toZonedTime(e.hasta, TIMEZONE)
+      desde: e.desde,
+      hasta: e.hasta
     }));
 
     const slotsResultado: SlotHorario[] = [];
-    const intervaloGeneracion = 30; 
+    const intervaloGeneracion = 30; // Minutos
+
+    // El momento actual, sin importar dónde corra Vercel, es el mismo instante en el universo :O
+    const ahora = new Date(); 
 
     for (const margen of diaLaboral.margenes) {
-      // Forzamos que el iterador empiece exactamente en la hora del margen en ARG
-      let iteradorFecha = fromZonedTime(`${fechaString} ${margen.desde}`, TIMEZONE);
-      const finMargenFecha = fromZonedTime(`${fechaString} ${margen.hasta}`, TIMEZONE);
+      // margen.desde viene como "08:00". Generamos el Date absoluto exacto.
+      // Si a fromZonedTime le pasamos el string con la zona, nos da el UTC correcto.
+      let iteradorFecha = fromZonedTime(`${fechaString} ${margen.desde}:00`, TIMEZONE);
+      const finMargenFecha = fromZonedTime(`${fechaString} ${margen.hasta}:00`, TIMEZONE);
 
       while (isBefore(addMinutes(iteradorFecha, duracion), finMargenFecha) || 
              isEqual(addMinutes(iteradorFecha, duracion), finMargenFecha)) {
         
         const slotInicio = iteradorFecha;
         const slotFin = addMinutes(slotInicio, duracion);
+        
         let disponible = true;
         let razon = "";
 
-        // Comparación segura (ambos están en la misma zona horaria)
+        // Comparación ABSOLUTA (Date UTC vs Date UTC)
         const chocaConTurno = turnosExistentes.some(t => (slotInicio < t.fin) && (slotFin > t.inicio));
         const chocaConExcepcion = excepciones.some(e => (slotInicio < e.hasta) && (slotFin > e.desde));
-        
-        const ahora = toZonedTime(new Date(), TIMEZONE);
-        const esPasado = slotInicio < addMinutes(ahora, 15);
+        const esPasado = isBefore(slotInicio, addMinutes(ahora, 15)); // Margen de 15 min
 
         if (chocaConTurno) { disponible = false; razon = "Ocupado"; }
         else if (chocaConExcepcion) { disponible = false; razon = "Cerrado"; }
         else if (esPasado) { disponible = false; razon = "Pasado"; }
 
         slotsResultado.push({
-          hora: format(slotInicio, "HH:mm"), 
+          // Solo acá convertimos a Hora Argentina para sacar el texto "HH:mm" que ve el usuario
+          hora: format(toZonedTime(slotInicio, TIMEZONE), "HH:mm"), 
           disponible,
           razon
         });
@@ -117,7 +122,7 @@ export async function obtenerHorariosDisponibles(
 
     return { success: true, horarios: horariosFinales };
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error al calcular disponibilidad:", error);
     return { success: false, error: "Error al calcular disponibilidad" };
   }
 }
