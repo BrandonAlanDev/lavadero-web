@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   vehiculoServicioId?: string;
   turnoIdAExcluir?: string;
-  defaultValue?: string; // ISO String: "2024-05-20T08:00:00.000Z"
+  defaultValue?: string; 
   name: string;
 }
 
@@ -18,8 +18,11 @@ export default function SeleccionadorHorario({
   defaultValue,
   name 
 }: Props) {
-  // Inicialización de fecha local
-  const getTodayStr = () => new Date().toISOString().split("T")[0];
+  const getTodayStr = () => {
+    const date = new Date();
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().split("T")[0];
+  };
   
   const [fecha, setFecha] = useState(defaultValue ? defaultValue.split("T")[0] : getTodayStr());
   const [horaSeleccionada, setHoraSeleccionada] = useState("");
@@ -29,10 +32,7 @@ export default function SeleccionadorHorario({
 
   useEffect(() => {
     if (defaultValue && defaultValue.includes("T")) {
-      // Si viene de la DB en UTC, extraemos la hora real sin conversiones
-      // Ejemplo: "2024-10-10T11:00:00.000Z" -> Si en Arg es las 08:00,
-      // necesitamos que el componente marque las 08:00. 
-      // Si tu backend ya manda la hora ajustada, este split funcionará:
+      // Extraemos la hora para mostrarla en los botones (ej: "08:00")
       const hora = defaultValue.split("T")[1].substring(0, 5);
       setHoraSeleccionada(hora);
     }
@@ -61,7 +61,6 @@ export default function SeleccionadorHorario({
     buscar();
   }, [fecha, vehiculoServicioId, turnoIdAExcluir]);
 
-  // Reset de hora si ya no es válida para la nueva fecha/servicio
   useEffect(() => {
     if (!loading && slots.length > 0 && horaSeleccionada) {
       const existe = slots.find(s => s.hora === horaSeleccionada);
@@ -69,7 +68,8 @@ export default function SeleccionadorHorario({
     }
   }, [fecha, vehiculoServicioId, slots, loading, horaSeleccionada]);
 
-  // Agregamos el offset -03:00 para que Prisma reciba la hora exacta de Argentina
+  // Le mandamos el offset de Argentina (-03:00)
+  // para que Prisma guarde la fecha en UTC de manera correcta
   const valorInputHidden = (fecha && horaSeleccionada)
     ? `${fecha}T${horaSeleccionada}:00.000-03:00` 
     : ""; 
@@ -129,6 +129,8 @@ export default function SeleccionadorHorario({
            </div>
         </div>
       </div>
+      
+      {/* Input oculto que envía el dato exacto al formulario */}
       <input type="hidden" name={name} value={valorInputHidden} />
     </div>
   );
