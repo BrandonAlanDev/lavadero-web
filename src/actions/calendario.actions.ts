@@ -1,9 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { addMinutes, format, isBefore, isEqual } from "date-fns";
+import { addMinutes, format, isBefore, isEqual, startOfDay } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
-import { serializeData } from "@/lib/utils";
 
 const TIMEZONE = "America/Argentina/Buenos_Aires";
 
@@ -19,12 +18,14 @@ export async function obtenerHorariosDisponibles(
   turnoIdAExcluir?: string
 ) {
   try {
-    // 1. Configurar fecha base (00:00 del día solicitado en Argentina)
-    const fechaBaseArg = fromZonedTime(`${fechaString} 00:00:00`, TIMEZONE);
-    const diaZonificado = toZonedTime(fechaBaseArg, TIMEZONE);
+    // 1. Configurar fechas límites en UTC para la consulta a Prisma
+    // Esto asegura que traigamos todos los turnos del día sin importar el desfase
+    const inicioBusqueda = fromZonedTime(`${fechaString} 00:00:00`, TIMEZONE);
+    const finBusqueda = fromZonedTime(`${fechaString} 23:59:59`, TIMEZONE);
+
+    const diaZonificado = toZonedTime(inicioBusqueda, TIMEZONE);
     const diaSemana = diaZonificado.getDay();
 
-    // 2. Obtener configuración del servicio
     const configServicio = await prisma.vehiculo_servicio.findUnique({
       where: { id: vehiculoServicioId },
       select: { duracion: true }
@@ -33,7 +34,6 @@ export async function obtenerHorariosDisponibles(
     if (!configServicio) throw new Error("Servicio no encontrado");
     const duracion = configServicio.duracion;
 
-    // 3. Obtener horarios de apertura
     const diaLaboral = await prisma.dia_laboral.findFirst({
       where: { dia: diaSemana, estado: true },
       include: { margenes: { where: { estado: true } } }
@@ -42,10 +42,6 @@ export async function obtenerHorariosDisponibles(
     if (!diaLaboral || diaLaboral.margenes.length === 0) {
       return { success: true, horarios: [], mensaje: "El local está cerrado este día" };
     }
-
-    // 4. Definir rango de búsqueda en la DB (Todo el día)
-    const inicioBusqueda = fechaBaseArg;
-    const finBusqueda = addMinutes(fechaBaseArg, 1440);
 
     const [excepcionesRaw, turnosRaw] = await Promise.all([
       prisma.expeciones_laborales.findMany({
@@ -64,7 +60,7 @@ export async function obtenerHorariosDisponibles(
       })
     ]);
 
-    // NORMALIZACIÓN: Convertimos todo lo que viene de la DB (UTC) a Hora Argentina
+    // NORMALIZACIÓN: Convertimos los turnos de la DB (UTC) a la zona horaria local para comparar
     const turnosExistentes = turnosRaw.map(t => ({
       inicio: toZonedTime(t.horarioReservado, TIMEZONE),
       fin: addMinutes(toZonedTime(t.horarioReservado, TIMEZONE), t.vehiculo_servicio.duracion)
@@ -76,33 +72,34 @@ export async function obtenerHorariosDisponibles(
     }));
 
     const slotsResultado: SlotHorario[] = [];
-    const intervaloGeneracion = 30; // Minutos entre cada opción de inicio
+    const intervaloGeneracion = 30; 
 
     for (const margen of diaLaboral.margenes) {
-      // Generamos el iterador basado en el string de la DB (ej: "09:00") en Argentina
+      // Forzamos que el iterador empiece exactamente en la hora del margen en ARG
       let iteradorFecha = fromZonedTime(`${fechaString} ${margen.desde}`, TIMEZONE);
       const finMargenFecha = fromZonedTime(`${fechaString} ${margen.hasta}`, TIMEZONE);
 
-      while (isBefore(addMinutes(iteradorFecha, duracion), finMargenFecha) || isEqual(addMinutes(iteradorFecha, duracion), finMargenFecha)) {
+      while (isBefore(addMinutes(iteradorFecha, duracion), finMargenFecha) || 
+             isEqual(addMinutes(iteradorFecha, duracion), finMargenFecha)) {
         
         const slotInicio = iteradorFecha;
         const slotFin = addMinutes(slotInicio, duracion);
         let disponible = true;
         let razon = "";
 
-        // Comparar contra turnos ya normalizados
+        // Comparación segura (ambos están en la misma zona horaria)
         const chocaConTurno = turnosExistentes.some(t => (slotInicio < t.fin) && (slotFin > t.inicio));
         const chocaConExcepcion = excepciones.some(e => (slotInicio < e.hasta) && (slotFin > e.desde));
         
         const ahora = toZonedTime(new Date(), TIMEZONE);
-        const esPasado = slotInicio < addMinutes(ahora, 15); // 15 min de margen
+        const esPasado = slotInicio < addMinutes(ahora, 15);
 
         if (chocaConTurno) { disponible = false; razon = "Ocupado"; }
         else if (chocaConExcepcion) { disponible = false; razon = "Cerrado"; }
         else if (esPasado) { disponible = false; razon = "Pasado"; }
 
         slotsResultado.push({
-          hora: format(slotInicio, "HH:mm"), // Ya está en la zona correcta
+          hora: format(slotInicio, "HH:mm"), 
           disponible,
           razon
         });
@@ -111,7 +108,6 @@ export async function obtenerHorariosDisponibles(
       }
     }
 
-    // Eliminar duplicados si hay márgenes solapados
     const uniqueSlots = new Map();
     slotsResultado.forEach(s => {
       if (!uniqueSlots.has(s.hora) || s.disponible) uniqueSlots.set(s.hora, s);

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface Props {
   vehiculoServicioId?: string;
   turnoIdAExcluir?: string;
-  defaultValue?: string; // Esperado: ISO String o undefined
+  defaultValue?: string; // ISO String: "2024-05-20T08:00:00.000Z"
   name: string;
 }
 
@@ -18,6 +18,7 @@ export default function SeleccionadorHorario({
   defaultValue,
   name 
 }: Props) {
+  // Inicialización de fecha local
   const getTodayStr = () => new Date().toISOString().split("T")[0];
   
   const [fecha, setFecha] = useState(defaultValue ? defaultValue.split("T")[0] : getTodayStr());
@@ -26,10 +27,12 @@ export default function SeleccionadorHorario({
   const [loading, setLoading] = useState(false);
   const [mensajeError, setMensajeError] = useState("");
 
-  // Efecto para cargar la hora inicial si existe defaultValue
   useEffect(() => {
     if (defaultValue && defaultValue.includes("T")) {
-      // Extraemos HH:mm del ISO sin dejar que el navegador lo convierta a local
+      // Si viene de la DB en UTC, extraemos la hora real sin conversiones
+      // Ejemplo: "2024-10-10T11:00:00.000Z" -> Si en Arg es las 08:00,
+      // necesitamos que el componente marque las 08:00. 
+      // Si tu backend ya manda la hora ajustada, este split funcionará:
       const hora = defaultValue.split("T")[1].substring(0, 5);
       setHoraSeleccionada(hora);
     }
@@ -58,17 +61,17 @@ export default function SeleccionadorHorario({
     buscar();
   }, [fecha, vehiculoServicioId, turnoIdAExcluir]);
 
-  // Al cambiar servicio o fecha, si la hora ya no es válida, la reseteamos
+  // Reset de hora si ya no es válida para la nueva fecha/servicio
   useEffect(() => {
     if (!loading && slots.length > 0 && horaSeleccionada) {
       const existe = slots.find(s => s.hora === horaSeleccionada);
       if (!existe) setHoraSeleccionada("");
     }
-  }, [fecha, vehiculoServicioId, slots]);
+  }, [fecha, vehiculoServicioId, slots, loading, horaSeleccionada]);
 
-  // Sin la "Z" al final para que el server lo reciba como hora local de Argentina
+  // Agregamos el offset -03:00 para que Prisma reciba la hora exacta de Argentina
   const valorInputHidden = (fecha && horaSeleccionada)
-    ? `${fecha}T${horaSeleccionada}:00` 
+    ? `${fecha}T${horaSeleccionada}:00.000-03:00` 
     : ""; 
 
   return (
@@ -96,7 +99,7 @@ export default function SeleccionadorHorario({
 
         <div>
            <label className="block text-xs font-medium text-gray-500 mb-1.5">Horarios</label>
-           <div className={cn("border rounded-md p-2 bg-white min-h-30", loading && "opacity-50 pointer-events-none")}>
+           <div className={cn("border rounded-md p-2 bg-white min-h-[120px]", loading && "opacity-50 pointer-events-none")}>
               {!vehiculoServicioId ? (
                 <div className="h-full flex items-center justify-center text-gray-400 text-xs text-center">Seleccione un servicio primero</div>
               ) : loading ? (
@@ -112,8 +115,8 @@ export default function SeleccionadorHorario({
                       variant="ghost"
                       className={cn(
                         "text-xs h-8 border",
-                        horaSeleccionada === slot.hora ? "bg-cyan-500 text-white border-cyan-600" : 
-                        slot.disponible ? "bg-white text-gray-700 border-gray-200" : "bg-red-50 text-red-300 border-red-50"
+                        horaSeleccionada === slot.hora ? "bg-cyan-600 text-white border-cyan-700" : 
+                        slot.disponible ? "bg-white text-gray-700 border-gray-200 hover:border-cyan-300" : "bg-red-50 text-red-300 border-red-50"
                       )}
                     >
                       {slot.hora}
