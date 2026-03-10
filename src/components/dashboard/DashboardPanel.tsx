@@ -4,10 +4,11 @@ import { useState, useEffect, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Mail, Phone, Calendar, Clock, Car, 
-  Settings, AlertCircle, CheckCircle2, XCircle, ChevronRight 
+  Settings, AlertCircle, CheckCircle2, XCircle, ChevronRight,
+  Lock, Eye, EyeOff
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { getUserTurnos, updateProfile, cancelTurno } from "@/actions/user-dashboard";
+import { getUserTurnos, updateProfile, cancelTurno, updatePassword  } from "@/actions/user-dashboard";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -19,13 +20,8 @@ export default function DashboardPanel({ user }: { user: any }) {
   const [activeTab, setActiveTab] = useState<'info' | 'turnos'>('info');
   const [turnos, setTurnos] = useState<TurnoWithDetails[]>([]);
   const [loadingTurnos, setLoadingTurnos] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    if (user.role === 'ADMIN') {
-      router.push('/admin');
-      router.refresh();
-    }
   }, []);
   
   // Efecto para cargar turnos cuando se entra a la pestaña
@@ -78,6 +74,7 @@ export default function DashboardPanel({ user }: { user: any }) {
             transition={{ duration: 0.2 }}
           >
             <ProfileForm user={user} />
+            <PasswordForm user={user} />
           </motion.div>
         ) : (
           <motion.div
@@ -236,6 +233,22 @@ function TurnosList({ turnos, loading }: { turnos: TurnoWithDetails[], loading: 
     );
   }
 
+  // --- LÓGICA DE FECHAS PARA ARGENTINA (UTC-3) ---
+  const getArgentinaDateString = (dateInput: Date | string) => {
+    // Convertimos a objeto Date y usamos toLocaleDateString con la zona horaria fija
+    return new Date(dateInput).toLocaleDateString('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires'
+    }); // Retorna "YYYY-MM-DD" en esa zona horaria
+  };
+
+  const hoyArgentina = getArgentinaDateString(new Date());
+
+  // Clasificación de turnos
+  const turnosHoy = turnos.filter(t => t.estado === 1 && getArgentinaDateString(t.horarioReservado) === hoyArgentina);
+  const turnosPendientes = turnos.filter(t => t.estado === 1 && getArgentinaDateString(t.horarioReservado) !== hoyArgentina);
+  const turnosCompletados = turnos.filter(t => t.estado === 2);
+  const turnosCancelados = turnos.filter(t => t.estado === 0);
+
   if (turnos.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
@@ -250,24 +263,53 @@ function TurnosList({ turnos, loading }: { turnos: TurnoWithDetails[], loading: 
   }
 
   return (
-    <div className="space-y-4">
-      <div className="px-2 py-4 bg-gray-50 rounded-2xl border-2 border-primary">
-      <p className="text-gray-500">Turnos pendientes</p>
-      {turnos.map((turno) => (
-        turno.estado==1 && <TurnoCard key={turno.id} turno={turno} />
-      ))}
+    <div className="space-y-6">
+      {/* SECCIÓN DE HOY (Solo aparece si hay turnos) */}
+      {turnosHoy.length > 0 && (
+        <div className="px-2 py-4 bg-blue-50/50 rounded-2xl border-2 border-primary animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-2 mb-3 px-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+            </span>
+            <p className="font-bold text-primary uppercase text-sm tracking-wider">Turnos para hoy</p>
+          </div>
+          <div className="space-y-3">
+            {turnosHoy.map((turno) => (
+              <TurnoCard key={turno.id} turno={turno}/>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* RESTO DE SECCIONES */}
+      <div className="px-2 py-4 bg-gray-50 rounded-2xl border border-gray-200">
+        <p className="text-gray-500 mb-3 px-2 text-sm font-medium">Próximos turnos y pendientes</p>
+        <div className="space-y-3">
+          {turnosPendientes.length > 0 ? (
+            turnosPendientes.map((turno) => <TurnoCard key={turno.id} turno={turno} />)
+          ) : (
+            <p className="text-xs text-gray-400 px-2 italic text-center py-2">No hay más turnos pendientes</p>
+          )}
+        </div>
       </div>
-      <div className="px-2 py-4 bg-gray-50 rounded-2xl border-2 border-primary">
-      <p className="text-gray-500">Turnos completados</p>
-      {turnos.map((turno) => (
-        turno.estado==2 && <TurnoCard key={turno.id} turno={turno} />
-      ))}
+
+      <div className="px-2 py-4 bg-gray-50 rounded-2xl border border-gray-200">
+        <p className="text-gray-500 mb-3 px-2 text-sm font-medium">Completados</p>
+        <div className="space-y-3">
+          {turnosCompletados.map((turno) => (
+            <TurnoCard key={turno.id} turno={turno} />
+          ))}
+        </div>
       </div>
-      <div className="px-2 py-4 bg-gray-50 rounded-2xl border-2 border-primary">
-      <p className="text-gray-500">Turnos cancelados</p>
-      {turnos.map((turno) => (
-        turno.estado==0 && <TurnoCard key={turno.id} turno={turno} />
-      ))}
+
+      <div className="px-2 py-4 bg-gray-50 rounded-2xl border border-gray-200">
+        <p className="text-gray-500 mb-3 px-2 text-sm font-medium">Cancelados</p>
+        <div className="space-y-3">
+          {turnosCancelados.map((turno) => (
+            <TurnoCard key={turno.id} turno={turno} />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -275,7 +317,7 @@ function TurnosList({ turnos, loading }: { turnos: TurnoWithDetails[], loading: 
 
 function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
   const [isCancelling, startCancelling] = useTransition();
-  const isCancelled = !turno.estado;
+  const turnoEstado = turno.estado;
   const isPast = new Date(turno.horarioReservado) < new Date();
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -296,15 +338,16 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       className={`relative overflow-hidden rounded-xl border transition-all ${
-        isCancelled 
+        turnoEstado === 0
           ? "bg-gray-50 border-gray-100 opacity-75" 
-          : "bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-primary/30"
+          : turnoEstado === 1 ? "bg-white border-gray-200 shadow-sm hover:shadow-md hover:border-primary/30"
+          : "bg-green-50 border-green-200 shadow-sm hover:shadow-md hover:border-green-300"
       }`}
     >
       <div className="flex flex-col md:flex-row">
         {/* Columna Fecha */}
         <div className={`p-6 flex flex-col justify-center items-center min-w-[140px] border-b md:border-b-0 md:border-r ${
-          isCancelled ? "bg-gray-100 text-gray-400" : "bg-blue-50/50 text-primary"
+          turnoEstado === 0 ? "bg-gray-100 text-gray-400" : turnoEstado === 2 ? "bg-green-50/50 text-green-700" : "bg-white text-gray-900"
         }`}>
           <span className="text-3xl font-bold">{fecha.getDate()}</span>
           <span className="text-sm font-medium uppercase tracking-wider">{fecha.toLocaleDateString('es-AR', { month: 'short' })}</span>
@@ -317,7 +360,7 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
         <div className="flex-1 p-6 flex flex-col justify-center">
           <div className="flex justify-between items-start mb-2">
             <div>
-               <h3 className={`font-semibold text-lg ${isCancelled ? "text-gray-500 line-through" : "text-gray-900"}`}>
+               <h3 className={`font-semibold text-lg ${turnoEstado === 0 ? "text-gray-500 line-through" : "text-gray-900"}`}>
                  {turno.vehiculo_servicio.servicio.nombre}
                </h3>
                <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
@@ -326,18 +369,18 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
             </div>
             {/* Status Badge */}
             <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 ${
-              isCancelled 
+              turnoEstado === 0 
                 ? "bg-red-100 text-red-700"
                 : isPast 
                   ? "bg-gray-100 text-gray-600"
                   : "bg-green-100 text-green-700"
             }`}>
-              {isCancelled ? (
+              {turnoEstado === 0 ? (
                 <><XCircle className="w-3 h-3" /> Cancelado</>
-              ) : isPast ? (
+              ) : turnoEstado === 2 ? (
                 <><CheckCircle2 className="w-3 h-3" /> Completado</>
               ) : (
-                <><CheckCircle2 className="w-3 h-3" /> Confirmado</>
+                <><CheckCircle2 className="w-3 h-3" /> Pendiente</>
               )}
             </div>
           </div>
@@ -348,7 +391,7 @@ function TurnoCard({ turno }: { turno: TurnoWithDetails }) {
                <span className="font-semibold text-gray-900">Total: ${turno.precioCongelado}</span>
              </div>
              
-             {!isCancelled && !isPast && (
+             {turnoEstado !== 0 && turnoEstado !== 2 && (
                <Button 
                 variant="outline" 
                 size="sm" 
@@ -444,4 +487,139 @@ function ModalError({ error, onClose }: { error: string, onClose: () => void }) 
             </div>
         </div>
     );
+}
+
+function PasswordForm({ user }: { user: any }) {
+  const [isPending, startTransition] = useTransition();
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [msg, setMsg] = useState("");
+
+  // Estados para mostrar/ocultar contraseñas
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handlePasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+
+    startTransition(async () => {
+      const res = await updatePassword(user.id, formData);
+      if (res.success) {
+        setStatus('success');
+        setMsg(res.message);
+        form.reset(); // Limpiamos los campos al tener éxito
+      } else {
+        setStatus('error');
+        setMsg(res.message);
+      }
+      
+      // Limpiamos el mensaje después de 4 segundos
+      setTimeout(() => setStatus('idle'), 4000);
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mt-8">
+      <div className="p-6 md:p-8 border-b border-gray-100 bg-gray-50/30">
+        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-800">
+          <Lock className="w-5 h-5 text-gray-400" />
+          Seguridad y Contraseña
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Actualiza tu contraseña. Si te registraste con Google, deja la contraseña actual en blanco.
+        </p>
+      </div>
+
+      <form onSubmit={handlePasswordSubmit} className="p-6 md:p-8 grid gap-6 md:grid-cols-2">
+        
+        {/* Contraseña Actual */}
+        <div className="space-y-2 md:col-span-2">
+          <label className="text-sm font-medium text-gray-700">Contraseña Actual</label>
+          <div className="relative">
+            <input
+              name="oldPassword"
+              type={showOld ? "text" : "password"}
+              className="w-full p-3 pr-10 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowOld(!showOld)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showOld ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Nueva Contraseña */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">Nueva Contraseña</label>
+          <div className="relative">
+            <input
+              name="newPassword"
+              type={showNew ? "text" : "password"}
+              required
+              minLength={6}
+              className="w-full p-3 pr-10 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+              placeholder="Mínimo 6 caracteres"
+            />
+            <button
+              type="button"
+              onClick={() => setShowNew(!showNew)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Confirmar Nueva Contraseña */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+          <div className="relative">
+            <input
+              name="confirmPassword"
+              type={showConfirm ? "text" : "password"}
+              required
+              minLength={6}
+              className="w-full p-3 pr-10 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+              placeholder="Repite la contraseña"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        <div className="md:col-span-2 flex items-center justify-end gap-4 mt-4">
+          {status === 'success' && (
+            <span className="text-green-600 text-sm flex items-center gap-1 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4" /> {msg}
+            </span>
+          )}
+          {status === 'error' && (
+            <span className="text-red-600 text-sm flex items-center gap-1 animate-in fade-in">
+              <AlertCircle className="w-4 h-4" /> {msg}
+            </span>
+          )}
+
+          <Button 
+            disabled={isPending} 
+            type="submit" 
+            variant="outline"
+            className="min-w-[150px] border-gray-300 text-gray-700 hover:bg-gray-50"
+          >
+            {isPending ? "Actualizando..." : "Cambiar Contraseña"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
 }

@@ -5,7 +5,6 @@ import { registerSchema, loginSchema } from "@/lib/zod"; // Asegúrate de import
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
 import { signOut } from "@/auth";
-import { serializeData } from "@/lib/utils";
 
 export async function handleSignOut() {
   await signOut({ redirectTo: "/" });

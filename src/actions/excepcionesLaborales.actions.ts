@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { serializeData } from "@/lib/utils";
 
 export type ActionState = {
     error?: string;
