@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
+import BotonesLimpieza from "@/components/admin/ui/BotonesLimpieza";
 
 export default async function AdminPage({
   searchParams,
@@ -20,9 +20,20 @@ export default async function AdminPage({
   const suspenseKey = `${sp.orderBy}-${sp.orderDir}-${sp.search}`;
 
   return (
-    <main className=" mt-20 p-6 gap-5">
-      <h1 className="text-2xl font-bold  mb-2">🚗 Gestión de Turnos</h1>
-      <div className="flex flex-col sm:flex-row justify-between gap-5"><Buscador /><Link href="/diaLaboral"><Button variant={"celeste"}>Ir a gestion de dia laboral</Button></Link></div>
+    <main className="mt-20 p-6 gap-5">
+      {/* Añadimos un contenedor flex para poner el título a la izquierda y los botones a la derecha */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5">
+        <h1 className="text-2xl font-bold">🚗 Gestión de Turnos</h1>
+        <BotonesLimpieza />
+      </div>
+
+      <div className="flex flex-col sm:flex-row justify-between gap-5 mb-5">
+        <Buscador />
+        <Link href="/diaLaboral">
+          <Button variant={"celeste"}>Ir a gestion de dia laboral</Button>
+        </Link>
+      </div>
+
       <Suspense key={suspenseKey} fallback={<LoadingOverlay />}>
         <TurnosContainer params={sp} />
       </Suspense>
