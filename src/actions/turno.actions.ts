@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { toZonedTime, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { addMinutes } from "date-fns";
 import { serializeData } from "@/lib/utils";
 
@@ -40,7 +40,7 @@ export async function createTurno(
         }
 
         // --- Lógica de Desfase Arreglada :) ---
-        const fechaSolicitadaInicio = fromZonedTime(horarioReservadoStr, TIMEZONE);
+        const fechaSolicitadaInicio = new Date(horarioReservadoStr);
         const ahoraUTC = new Date();
 
         if (fechaSolicitadaInicio <= addMinutes(ahoraUTC, 10)) {
@@ -174,8 +174,8 @@ export async function getTurnos(params?: { userId?: string; fecha?: string }): P
             success: true,
             data: serializedTurnos.map(t => ({
                 ...t,
-                // Importante: toZonedTime aquí si vas a mostrar la hora en un componente que no maneja TZ
-                horarioReservado: t.horarioReservado 
+                // Ahora sí forzamos a que el string devuelto tenga la hora de Argentina
+                horarioReservado: formatInTimeZone(t.horarioReservado, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss")
             }))
         };
     } catch (error) {

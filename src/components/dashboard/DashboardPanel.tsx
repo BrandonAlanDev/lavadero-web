@@ -5,26 +5,24 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Mail, Phone, Calendar, Clock, Car, 
   Settings, AlertCircle, CheckCircle2, XCircle, ChevronRight,
-  Lock, Eye, EyeOff
+  Lock, Eye, EyeOff, Users, Search, Trash2, Shield, ShieldOff
 } from "lucide-react";
 import { Button } from "../ui/button";
-import { getUserTurnos, updateProfile, cancelTurno, updatePassword  } from "@/actions/user-dashboard";
+import { getUserTurnos, updateProfile, cancelTurno, updatePassword } from "@/actions/user-dashboard";
+import { getAllUsers, toggleUserRole, deleteUserAccount } from "@/actions/admin-dashboard";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-// Definición de tipos basada en lo que devuelve tu action
+// Definición de tipos basada en lo que devuelve action
 type TurnoWithDetails = Awaited<ReturnType<typeof getUserTurnos>>[0];
 
 export default function DashboardPanel({ user }: { user: any }) {
-  const [activeTab, setActiveTab] = useState<'info' | 'turnos'>('info');
+  // Añadimos 'usuarios' a los estados posibles
+  const [activeTab, setActiveTab] = useState<'info' | 'turnos' | 'usuarios'>('info');
   const [turnos, setTurnos] = useState<TurnoWithDetails[]>([]);
   const [loadingTurnos, setLoadingTurnos] = useState(false);
 
-  useEffect(() => {
-  }, []);
-  
-  // Efecto para cargar turnos cuando se entra a la pestaña
   useEffect(() => {
     if (activeTab === 'turnos') {
       setLoadingTurnos(true);
@@ -36,8 +34,7 @@ export default function DashboardPanel({ user }: { user: any }) {
   }, [activeTab, user.id]);
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8 min-h-screen bg-white  border-x-2  mt-[50px] shadow-2xl shadows-black">
-      {/* Header del Dashboard */}
+    <div className="max-w-5xl mx-auto p-4 md:p-8 min-h-screen bg-white border-x-2 mt-[50px] shadow-2xl shadows-black">
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
@@ -46,8 +43,7 @@ export default function DashboardPanel({ user }: { user: any }) {
           <p className="text-gray-500 mt-1">Gestiona tu perfil y tus reservas.</p>
         </div>
         
-        {/* Navegación de Pestañas (Tabs) */}
-        <div className="flex p-1 bg-white rounded-xl border border-gray-200 shadow-sm w-fit">
+        <div className="flex p-1 bg-white rounded-xl border border-gray-200 shadow-sm w-fit flex-wrap gap-1">
           <TabButton 
             isActive={activeTab === 'info'} 
             onClick={() => setActiveTab('info')} 
@@ -60,31 +56,36 @@ export default function DashboardPanel({ user }: { user: any }) {
             label="Mis Turnos" 
             icon={<Calendar className="w-4 h-4" />}
           />
+          {/* Pestaña condicional solo para ADMIN */}
+          {user.role === 'ADMIN' && (
+            <TabButton 
+              isActive={activeTab === 'usuarios'} 
+              onClick={() => setActiveTab('usuarios')} 
+              label="Admin. Usuarios" 
+              icon={<Users className="w-4 h-4" />}
+            />
+          )}
         </div>
       </div>
 
-      {/* Contenido */}
       <AnimatePresence mode="wait">
-        {activeTab === 'info' ? (
-          <motion.div
-            key="info"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
+        {activeTab === 'info' && (
+          <motion.div key="info" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <ProfileForm user={user} />
             <PasswordForm user={user} />
           </motion.div>
-        ) : (
-          <motion.div
-            key="turnos"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
+        )}
+        
+        {activeTab === 'turnos' && (
+          <motion.div key="turnos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <TurnosList turnos={turnos} loading={loadingTurnos} />
+          </motion.div>
+        )}
+
+        {/* Nuevo Tab Panel */}
+        {activeTab === 'usuarios' && user.role === 'ADMIN' && (
+          <motion.div key="usuarios" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <AdminUsersPanel currentUser={user} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -621,5 +622,170 @@ function PasswordForm({ user }: { user: any }) {
         </div>
       </form>
     </div>
+  );
+}
+
+function AdminUsersPanel({ currentUser }: { currentUser: any }) {
+  const [users, setUsers] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const fetchUsers = () => {
+    setLoading(true);
+    getAllUsers().then((data) => {
+      setUsers(data);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleToggleRole = (id: string, currentRole: string) => {
+    startTransition(async () => {
+      await toggleUserRole(id, currentRole);
+      fetchUsers(); // Recargamos lista
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    startTransition(async () => {
+      await deleteUserAccount(userToDelete);
+      setUserToDelete(null);
+      fetchUsers(); // Recargamos lista
+    });
+  };
+
+  // Filtrado por buscador
+  const filteredUsers = users.filter(u => 
+    u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="p-6 md:p-8 border-b border-gray-100 bg-gray-50/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-800">
+            <Users className="w-5 h-5 text-gray-400" />
+            Administrar Usuarios
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">Gestiona roles y cuentas de la plataforma.</p>
+        </div>
+        
+        {/* Buscador */}
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre o email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="p-6 md:p-8">
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredUsers.length > 0 ? filteredUsers.map((u) => (
+              <div key={u.id} className={`flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border transition-colors ${u.role === 'ADMIN' ? 'bg-amber-50/30 border-amber-100' : 'bg-white border-gray-100'}`}>
+                <div className="flex-1 mb-4 md:mb-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900">{u.name || 'Sin Nombre'}</p>
+                    {u.role === 'ADMIN' && (
+                      <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-bold rounded-md flex items-center gap-1">
+                        <Shield className="w-3 h-3" /> ADMIN
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                    <Mail className="w-3 h-3" /> {u.email}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Unido el: {new Date(u.createdAt).toLocaleDateString('es-AR')}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Evitar que el admin se quite el rol a sí mismo o se borre a sí mismo por error */}
+                  {currentUser.id !== u.id && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => handleToggleRole(u.id, u.role)}
+                        className={`text-xs ${u.role === 'ADMIN' ? 'text-gray-600' : 'text-blue-600'}`}
+                      >
+                        {u.role === 'ADMIN' ? <><ShieldOff className="w-3 h-3 mr-1"/> Quitar Admin</> : <><Shield className="w-3 h-3 mr-1"/> Dar Admin</>}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => setUserToDelete(u.id)}
+                        className="text-red-600 border-red-100 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                  {currentUser.id === u.id && (
+                    <span className="text-xs text-gray-400 italic">Tú (Sesión actual)</span>
+                  )}
+                </div>
+              </div>
+            )) : (
+              <p className="text-center text-gray-500 py-8">No se encontraron usuarios.</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modal de confirmación para eliminar usuario */}
+      {userToDelete && (
+        <ConfirmDeleteUserModal 
+          onCancel={() => setUserToDelete(null)}
+          onConfirm={handleDelete}
+          isPending={isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function ConfirmDeleteUserModal({ onConfirm, onCancel, isPending }: { onConfirm: () => void, onCancel: () => void, isPending: boolean }) {
+  return (
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6 text-center">
+                  <div className="w-16 h-16 bg-white text-red-600 border-2 border-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Trash2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800">¿Eliminar Usuario?</h3>
+                  <p className="text-slate-500 mt-2 text-sm">
+                      Esta acción es irreversible. Se eliminará la cuenta y todos los datos asociados (turnos, historial). ¿Estás seguro?
+                  </p>
+              </div>
+              <div className="flex border-t">
+                  <button onClick={onCancel} disabled={isPending} className="flex-1 p-4 text-slate-600 font-semibold hover:bg-slate-50 transition-colors border-r">
+                      Cancelar
+                  </button>
+                  <button onClick={onConfirm} disabled={isPending} className="flex-1 p-4 text-red-600 font-bold hover:bg-red-50 transition-colors disabled:opacity-50">
+                      {isPending ? "Eliminando..." : "Sí, eliminar"}
+                  </button>
+              </div>
+          </div>
+      </div>
   );
 }
