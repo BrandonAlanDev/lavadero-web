@@ -6,7 +6,7 @@ import { toZonedTime, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { addMinutes } from "date-fns";
 import { serializeData } from "@/lib/utils";
 
-const TIMEZONE = "America/Argentina/Buenos_Aires";
+const TIMEZONE = process.env.TIMEZONE || "America/Argentina/Buenos_Aires";
 
 export type ActionState = {
     error?: string;
@@ -39,8 +39,8 @@ export async function createTurno(
             return { error: "Todos los campos son requeridos", success: false };
         }
 
-        // --- Lógica de Desfase Arreglada :) ---
-        const fechaSolicitadaInicio = new Date(horarioReservadoStr);
+        // --- Lógica de Desfase :) ---
+        const fechaSolicitadaInicio = fromZonedTime(horarioReservadoStr, TIMEZONE);
         const ahoraUTC = new Date();
 
         if (fechaSolicitadaInicio <= addMinutes(ahoraUTC, 10)) {
