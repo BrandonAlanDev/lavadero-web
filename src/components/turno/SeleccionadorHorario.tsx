@@ -68,11 +68,9 @@ export default function SeleccionadorHorario({
     }
   }, [fecha, vehiculoServicioId, slots, loading, horaSeleccionada]);
 
-  // Le mandamos el offset de Argentina (-03:00)
-  // para que Prisma guarde la fecha en UTC de manera correcta
   const valorInputHidden = (fecha && horaSeleccionada)
-    ? `${fecha}T${horaSeleccionada}:00.000-03:00` 
-    : ""; 
+    ? `${fecha}T${horaSeleccionada}:00` 
+    : "";
 
   return (
     <div className="bg-gray-50 border rounded-lg p-4 space-y-4">
