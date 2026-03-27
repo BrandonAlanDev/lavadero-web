@@ -12,7 +12,7 @@ interface HeroProps {
 
 export function Hero({ onBookingClick }: HeroProps) {
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden p-4">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
