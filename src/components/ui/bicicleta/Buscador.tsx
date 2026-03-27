@@ -1,8 +1,8 @@
 import { Button } from "../button";
 export default function Buscador() {
   return (
-    <section className="space-y-1">
-      <form className="flex justify-between gap-2 w-lg border-2 border-primary bg-white/90 p-2 rounded-2xl">
+    <section className="space-y-1 w-full">
+      <form className="flex justify-between gap-2 w-full border-2 border-primary bg-white/90 p-2 rounded-2xl">
         <input
           name="search"
           placeholder="🔍 Buscar..."
