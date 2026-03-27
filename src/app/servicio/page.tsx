@@ -14,8 +14,8 @@ export default async function ServiciosPage() {
 
     return (
         <div className="container mx-auto p-6 max-w-7xl mt-20">
-            <div className="flex flex-row justify-between items-center mb-6">
-                <div className="flex flex-col gap-5">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div className="flex flex-col md:flex-row gap-5">
                     <h1 className="text-3xl font-bold mb-2">Gestión de Servicios</h1>
                     <p className="text-gray-600">
                         Administra los servicios disponibles para tus vehículos
