@@ -15,12 +15,12 @@ export default async function VehiculosPage() {
     return (
         <div className="container mx-auto p-6 max-w-7xl mt-20">
 
-            <div className="flex flex-row justify-between items-center mb-6">
-                <div className="flex flex-col gap-5">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div className="flex flex-col md:flex-row gap-5">
                     <h1 className="text-3xl font-bold mb-2">Gestión de Vehículos</h1>
-                <p className="text-gray-600">
-                    Administra los tipos de vehículos disponibles para tus servicios
-                </p>
+                    <p className="text-gray-600">
+                        Administra los tipos de vehículos disponibles para tus servicios
+                    </p>
                 </div>
                 <div className="flex flex-row gap-5">
                     <Link href="/servicio"><Button variant={"celeste"}>Ir a Servicios</Button></Link>

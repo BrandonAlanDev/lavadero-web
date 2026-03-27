@@ -11,7 +11,7 @@ export default function HomeClient() {
   const { onOpen } = useBooking();
 
   return (
-      <div className="min-h-screenjustify-center items-center mx-auto bg-blue-50">
+      <div className="min-h-screenjustify-center items-center mx-auto bg-blue-50 overflow-hidden">
         <main>
           <Hero onBookingClick={onOpen} />
           <ImageCarousel />
