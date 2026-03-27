@@ -12,7 +12,7 @@ export default async function TurnoPage() {
 
     return (
         <div className="container mx-auto p-6 max-w-7xl mt-20">
-            <div className="mb-8">
+            <div className="mb-8 flex-col md:flex-row">
                 <h1 className="text-3xl font-bold mb-2">Gestión de Turnos</h1>
                 <p className="text-gray-600">
                     Administra las reservas de turnos para tus servicios

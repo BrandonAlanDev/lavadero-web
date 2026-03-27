@@ -110,8 +110,15 @@ export default function ListaTurnos({
               <tr><td colSpan={4} className="p-8 text-center text-gray-400 italic">No hay turnos registrados aquí.</td></tr>
             ) : (
               data.map((turno) => (
-                <tr key={turno.id} className="hover:bg-blue-50/40 transition-colors text-center">
-                  <td className="p-3 font-medium">
+                <tr
+                  key={turno.id}
+                  className={`hover:bg-blue-50/40 transition-colors text-center border-l-8 border-solid
+                    ${turno.estado === 0 ? "!border-l-red-500" : ""}
+                    ${turno.estado === 1 ? "!border-l-yellow-500" : ""}
+                    ${turno.estado === 2 ? "!border-l-green-500" : ""}
+                  `}
+                >
+                  <td className={`p-3 font-medium`}>
                     {new Date(turno.horarioReservado).toLocaleString("es-AR", {
                       day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit",
                     })}

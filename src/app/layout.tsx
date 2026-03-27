@@ -30,7 +30,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased w-dvw`}>
         {/* 2. Implementa el loader aquí */}
         <NextTopLoader 
           color="#6fa9da" // Tu color celeste característico
