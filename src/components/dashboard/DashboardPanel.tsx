@@ -14,6 +14,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+
 // Definición de tipos basada en lo que devuelve action
 type TurnoWithDetails = Awaited<ReturnType<typeof getUserTurnos>>[0];
 
@@ -119,12 +120,49 @@ function TabButton({ isActive, onClick, label, icon }: any) {
   );
 }
 
-function ProfileForm({ user }: { user: any }) {
+export function ProfileForm({ user }: { user: any }) {
   const { update } = useSession();
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [msg, setMsg] = useState("");
 
+  // ESTADOS PARA EL TELÉFONO Y NOMBRE
+  const [name, setName] = useState(user.name || "");
+  const [countryCode, setCountryCode] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+
+  // Lógica de inicialización del teléfono al cargar el componente
+  useState(() => {
+    if (user.telefono) {
+      // Quitamos todos los espacios para analizarlo más fácil
+      const strippedPhone = user.telefono.replace(/\s+/g, '');
+      
+      // Si empieza con +549 (o +54 9)
+      if (strippedPhone.startsWith("+549")) {
+        setCountryCode("+54 9 ");
+        setPhoneNumber(strippedPhone.slice(4)); // Guardamos solo los números restantes
+      } else {
+        // Si tiene otro código no reconocido, lo mandamos a "no seleccionado"
+        setCountryCode("");
+        setPhoneNumber(strippedPhone); 
+      }
+    } else {
+      // Si no tiene teléfono, default Argentina
+      setCountryCode("+54 9 ");
+    }
+  });
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Reemplaza cualquier cosa que NO sea letra o espacio por vacío
+    const soloLetras = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    setName(soloLetras);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Reemplaza cualquier cosa que NO sea número por vacío
+    const soloNumeros = e.target.value.replace(/\D/g, '');
+    setPhoneNumber(soloNumeros);
+  };
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -142,6 +180,9 @@ function ProfileForm({ user }: { user: any }) {
             telefono: res.user.telefono
           });
         }
+      } else {
+        setStatus('error');
+        setMsg(res.message || "Error al actualizar");
       }
     });
   };
@@ -155,7 +196,6 @@ function ProfileForm({ user }: { user: any }) {
         </h2>
       </div>
 
-      {/* IMPORTANTE: onSubmit en lugar de action */}
       <form onSubmit={handleFormSubmit} className="p-6 md:p-8 grid gap-6 md:grid-cols-2">
         
         {/* Email (Solo lectura) */}
@@ -168,32 +208,56 @@ function ProfileForm({ user }: { user: any }) {
           </div>
         </div>
 
-        {/* Nombre - IMPORTANTE: name="name" */}
+        {/* Nombre */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
             <User className="w-4 h-4 text-gray-400" /> Nombre Completo
           </label>
           <input
             name="name" 
-            defaultValue={user.name}
+            value={name}
+            onChange={handleNameChange}
             type="text"
             required
             className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+            placeholder="Ej. Juan Pérez"
           />
         </div>
 
-        {/* Teléfono - IMPORTANTE: name="telefono" */}
+        {/* Teléfono Combinado */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-            <Phone className="w-4 h-4 text-gray-400" /> Teléfono
+            <Phone className="w-4 h-4 text-gray-400" /> Teléfono (WhatsApp)
           </label>
-          <input
-            name="telefono"
-            defaultValue={user.telefono || ''}
-            type="text" 
-            className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-            placeholder="+54 ..."
-          />
+          
+          <div className="flex gap-2">
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+              className="p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm w-[130px] flex-shrink-0"
+            >
+              <option value="">No seleccionado</option>
+              <option value="+54 9 ">🇦🇷 +54 9</option>
+              <option value="+56 9 ">🇨🇱 +56 9</option>
+              <option value="+598 ">🇺🇾 +598</option>
+              {/* Agrega más prefijos según lo necesites */}
+            </select>
+            
+            <input
+              type="text" 
+              value={phoneNumber}
+              onChange={handlePhoneChange}
+              className="w-full p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+              placeholder="11 2345 6789"
+            />
+            
+            {/* Input oculto que envía el dato completo al backend */}
+            <input 
+              type="hidden" 
+              name="telefono" 
+              value={`${countryCode}${phoneNumber}`.trim()} 
+            />
+          </div>
         </div>
 
         <div className="md:col-span-2 flex items-center justify-end gap-4 mt-4">
@@ -283,7 +347,7 @@ function TurnosList({ turnos, loading }: { turnos: TurnoWithDetails[], loading: 
         </div>
       )}
 
-      {/* RESTO DE SECCIONES */}
+      {/* SECCIONES */}
       <div className="px-2 py-4 bg-gray-50 rounded-2xl border border-gray-200">
         <p className="text-gray-500 mb-3 px-2 text-sm font-medium">Próximos turnos y pendientes</p>
         <div className="space-y-3">
