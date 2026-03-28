@@ -3,19 +3,18 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "./auth.config";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google"; // <--- Importar Google
+import Google from "next-auth/providers/google";
 import { loginSchema } from "@/lib/zod";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma) as any, 
-  session: { strategy: "jwt" }, // OAuth funciona mejor con JWT en NextAuth v5 si no quieres sesiones en DB
+  session: { strategy: "jwt" },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      // Esto permite que si alguien se registró con email, pueda luego entrar con Google si es el mismo correo
       allowDangerousEmailAccountLinking: true, 
     }),
     Credentials({
@@ -23,7 +22,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const { email, password } = await loginSchema.parseAsync(credentials);
         
         const user = await prisma.user.findUnique({ where: { email } });
-        // Verificamos si tiene password (si entró con Google antes, no tendrá password)
         if (!user || !user.password) return null;
 
         const isValid = await bcrypt.compare(password, user.password);
@@ -33,9 +31,64 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id, 
           name: user.name, 
           email: user.email, 
-          role: user.role 
+          role: user.role,
+          telefono: user.telefono,
+          image: user.image
         };
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, user, trigger, session }) {
+
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role;
+        token.telefono = (user as any).telefono;
+        token.image = user.image;
+        return token;
+      }
+
+      if (trigger === "update" && session) {
+        token.name = session.name ?? token.name;
+        token.telefono = session.telefono ?? token.telefono;
+        return token;
+      }
+
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { id: true, name: true, role: true, telefono: true, image: true }
+          });
+
+
+          if (!dbUser) return {};
+          token.name = dbUser.name;
+          token.role = dbUser.role;
+          token.telefono = dbUser.telefono;
+          token.image = dbUser.image;
+        } catch (error) {
+          console.error("Error validando usuario en Prisma:", error);
+        }
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (!token.id) {
+        return { ...session, user: null as any };
+      }
+
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.telefono = token.telefono as string | null;
+        session.user.image = token.image as string | null;
+        session.user.name = token.name as string | null;
+      } 
+
+      return session;
+    },
+  },
 });

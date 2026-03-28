@@ -22,7 +22,7 @@ export function Header({ session }: HeaderProps) {
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="fixed top-0 left-0 right-0 z-40 backdrop-blur-lg bg-linear-to-br from-white to-white/60 shadow-md w-full max-w-dvw"
+        className="fixed top-0 left-0 right-0 z-40 backdrop-blur-lg bg-linear-to-br from-white to-white/60 shadow-md w-full max-w-dvw max-h-dvh"
       >
         <div className="container flex items-center justify-between h-16 mx-auto px-4 select-none">
           
