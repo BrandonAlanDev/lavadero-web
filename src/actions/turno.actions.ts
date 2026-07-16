@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { toZonedTime, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import { addMinutes } from "date-fns";
 import { serializeData } from "@/lib/utils";
-import { enviarCorreoCreacionTurno, enviarCorreoModificacionTurno, enviarCorreoCancelacionTurno } from "@/lib/mail";
+import { enviarCorreoCreacionTurno, enviarCorreoModificacionTurno, enviarCorreoCancelacionTurno, TurnoDetails } from "@/lib/mail";
+import { obtenerConfiguracion } from "./configuracion.actions";
 
 const TIMEZONE = process.env.TIMEZONE || "America/Argentina/Buenos_Aires";
 
@@ -14,6 +15,20 @@ export type ActionState = {
     success?: boolean;
     data?: any;
 };
+
+async function getWhatsAppUrl(tipo: "solicitar" | "modificar" | "cancelar", detalles: TurnoDetails) {
+    const ownerNumber = await obtenerConfiguracion("WHATSAPP_OWNER_NUMBER");
+    if (!ownerNumber) return null;
+
+    const texto = `Hola, acabo de ${tipo} un turno.
+*Detalle del turno:*
+- Cliente: ${detalles.cliente}
+- Servicio: ${detalles.servicio}
+- Fecha: ${detalles.fecha}
+- Vehículo: ${detalles.vehiculo}`;
+
+    return `https://wa.me/${ownerNumber}?text=${encodeURIComponent(texto)}`;
+}
 
 // Auxiliares zonificados
 function getMinutesFromZonedDate(date: Date): number {
@@ -134,6 +149,9 @@ export async function createTurno(
             }
         });
 
+        let whatsappUrl = null;
+        let turnoDetalles = null;
+
         // Notificación por correo
         try {
             const turnoParaCorreo = await prisma.turno.findUnique({
@@ -147,20 +165,33 @@ export async function createTurno(
             });
 
             if (turnoParaCorreo && turnoParaCorreo.user.email) {
-                await enviarCorreoCreacionTurno(turnoParaCorreo.user.email, {
+                turnoDetalles = {
                     cliente: turnoParaCorreo.user.name || turnoParaCorreo.user.email,
                     fecha: formatInTimeZone(turnoParaCorreo.horarioReservado, TIMEZONE, "dd/MM/yyyy HH:mm"),
                     vehiculo: turnoParaCorreo.vehiculo_servicio.vehiculo.nombre || "Vehículo",
                     servicio: turnoParaCorreo.vehiculo_servicio.servicio.nombre || "Servicio",
                     precio: Number(turnoParaCorreo.precioCongelado)
-                });
+                };
+                await enviarCorreoCreacionTurno(turnoParaCorreo.user.email, turnoDetalles);
             }
         } catch (mailError) {
-            console.error("Error al enviar correo de creación:", mailError);
+            console.error("[WPP] Error al enviar correo de creación:", mailError);
+        }
+
+        // Generación del link de WhatsApp (independiente del correo)
+        try {
+            if (turnoDetalles) {
+                whatsappUrl = await getWhatsAppUrl("solicitar", turnoDetalles);
+                console.log("[WPP] URL generada:", whatsappUrl);
+            } else {
+                console.warn("[WPP] No se pudieron obtener los detalles del turno para WhatsApp");
+            }
+        } catch (wppError) {
+            console.error("[WPP] Error al generar URL de WhatsApp:", wppError);
         }
 
         revalidatePath("/turno");
-        return { success: true, data: { id: nuevoTurno.id } };
+        return { success: true, data: { id: nuevoTurno.id, whatsappUrl } };
 
     } catch (error) {
         console.error(error);
@@ -322,19 +353,33 @@ export async function actualizarTurno(
             }
         });
 
+        let whatsappUrl = null;
+        let detallesModificacion = null;
+
         // Notificación por correo
         try {
             if (turnoActualizado.user.email) {
-                await enviarCorreoModificacionTurno(turnoActualizado.user.email, {
+                detallesModificacion = {
                     cliente: turnoActualizado.user.name || turnoActualizado.user.email,
                     fecha: formatInTimeZone(turnoActualizado.horarioReservado, TIMEZONE, "dd/MM/yyyy HH:mm"),
                     vehiculo: turnoActualizado.vehiculo_servicio.vehiculo.nombre || "Vehículo",
                     servicio: turnoActualizado.vehiculo_servicio.servicio.nombre || "Servicio",
                     precio: Number(turnoActualizado.precioCongelado)
-                });
+                };
+                await enviarCorreoModificacionTurno(turnoActualizado.user.email, detallesModificacion);
             }
         } catch (mailError) {
-            console.error("Error al enviar correo de modificación:", mailError);
+            console.error("[WPP] Error al enviar correo de modificación:", mailError);
+        }
+
+        // Generación del link de WhatsApp (independiente del correo)
+        try {
+            if (detallesModificacion) {
+                whatsappUrl = await getWhatsAppUrl("modificar", detallesModificacion);
+                console.log("[WPP] URL de modificación generada:", whatsappUrl);
+            }
+        } catch (wppError) {
+            console.error("[WPP] Error al generar URL de WhatsApp (modificar):", wppError);
         }
 
         revalidatePath("/turno");
@@ -344,6 +389,7 @@ export async function actualizarTurno(
             success: true,
             data: {
                 ...turnoActualizado,
+                whatsappUrl,
                 precioCongelado: Number(turnoActualizado.precioCongelado),
                 seniaCongelada: Number(turnoActualizado.seniaCongelada),
                 vehiculo_servicio: {
@@ -456,19 +502,35 @@ export async function deleteTurno(
             }
         });
 
+        let whatsappUrl = null;
+        let detallesCancelacion = null;
+
         // Notificación por correo
         try {
             if (existe.user.email) {
-                await enviarCorreoCancelacionTurno(existe.user.email, {
+                detallesCancelacion = {
                     cliente: existe.user.name || existe.user.email,
                     fecha: formatInTimeZone(existe.horarioReservado, TIMEZONE, "dd/MM/yyyy HH:mm"),
                     vehiculo: existe.vehiculo_servicio.vehiculo.nombre || "Vehículo",
                     servicio: existe.vehiculo_servicio.servicio.nombre || "Servicio",
                     precio: Number(existe.precioCongelado)
-                });
+                };
+                await enviarCorreoCancelacionTurno(existe.user.email, detallesCancelacion);
             }
         } catch (mailError) {
-            console.error("Error al enviar correo de cancelación:", mailError);
+            console.error("[WPP] Error al enviar correo de cancelación:", mailError);
+        }
+
+        // Generación del link de WhatsApp (independiente del correo)
+        try {
+            if (detallesCancelacion) {
+                whatsappUrl = await getWhatsAppUrl("cancelar", detallesCancelacion);
+                console.log("[WPP] URL de cancelación generada:", whatsappUrl);
+            } else {
+                console.warn("[WPP] No hay detalles de cancelación para generar WhatsApp");
+            }
+        } catch (wppError) {
+            console.error("[WPP] Error al generar URL de WhatsApp (cancelar):", wppError);
         }
 
         // Revalidamos la ruta para que la lista de turnos se actualice al instante
@@ -476,7 +538,7 @@ export async function deleteTurno(
 
         return {
             success: true,
-            data: { id }
+            data: { id, whatsappUrl }
         };
     } catch (error) {
         console.error("Error eliminando turno:", error);
