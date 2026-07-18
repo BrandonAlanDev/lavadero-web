@@ -3,6 +3,13 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { serializeData } from "@/lib/utils";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export type ActionState = {
     error?: string;
@@ -10,56 +17,56 @@ export type ActionState = {
     data?: any;
 };
 
-// Función helper para limpiar y validar URLs de imágenes
 function cleanImageUrl(url: string | null): string | null {
     if (!url || url.trim() === '') return null;
-
     let cleaned = url.trim();
 
-    // Rechazar imágenes base64
     if (cleaned.startsWith('data:image')) {
-        console.warn('⚠️ Imagen base64 detectada, no se guardará.');
+        console.warn('⚠️ Imagen base64 detectada, no se guardará directamente.');
         return null;
     }
-
-    // Si contiene "public\\" o "public/", quitarlo y agregar /
     if (cleaned.includes('public\\') || cleaned.includes('public/')) {
         cleaned = cleaned.replace(/^.*public[\\\/]/, '/');
     }
-
-    // Si es ruta local de Windows (C:\...), devolver null
     if (cleaned.match(/^[A-Za-z]:\\/)) {
         console.warn('⚠️ Ruta de Windows detectada, no se guardará:', cleaned);
         return null;
     }
-
-    // Si es ruta relativa sin /, agregarla
     if (!cleaned.startsWith('http') && !cleaned.startsWith('/')) {
         cleaned = '/' + cleaned;
     }
-
-    // Reemplazar \ por /
     cleaned = cleaned.replace(/\\/g, '/');
-
     return cleaned;
+}
+
+async function uploadToCloudinary(file: File): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+  
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const base64Image = `data:${file.type};base64,${buffer.toString('base64')}`;
+
+  try {
+    const uploadRes = await cloudinary.uploader.upload(base64Image, {
+      folder: "lavadero/vehiculos",
+    });
+    return uploadRes.secure_url;
+  } catch (error) {
+    console.error("Error subiendo imagen de vehículo a Cloudinary:", error);
+    throw new Error("No se pudo subir la imagen a Cloudinary");
+  }
 }
 
 export const getVehiculos = async (): Promise<ActionState> => {
     try {
         const vehiculo = await prisma.vehiculo.findMany({
-            where: {
-                estado: true
-            },
+            where: { estado: true },
             include: {
                 vehiculo_servicio: {
-                    include: {
-                        servicio: true
-                    }
+                    include: { servicio: true }
                 }
             },
-            orderBy: {
-                createdAt: 'desc'
-            }
+            orderBy: { createdAt: 'desc' }
         });
 
         return {
@@ -78,8 +85,8 @@ export const getVehiculos = async (): Promise<ActionState> => {
 export const createVehiculo = async (prevState: ActionState, formData: FormData): Promise<ActionState> => {    
     try {
         const nombre = formData.get('nombre') as string;
-        const srcImageRaw = formData.get('srcImage') as string;
         const estadoValue = formData.get('estado');
+        const imageEntry = formData.get('srcImage');
 
         if (!nombre || nombre.trim() === '') {
             return {
@@ -88,14 +95,22 @@ export const createVehiculo = async (prevState: ActionState, formData: FormData)
             };
         }
 
-        const srcImage = cleanImageUrl(srcImageRaw);
+        let finalImageUrl: string | null = null;
+
+        if (imageEntry instanceof File && imageEntry.size > 0) {
+            finalImageUrl = await uploadToCloudinary(imageEntry);
+        } 
+        else if (typeof imageEntry === 'string') {
+            finalImageUrl = cleanImageUrl(imageEntry);
+        }
+
         const estado = estadoValue === 'true';
 
         const nuevoVehiculo = await prisma.vehiculo.create({
             data: {
                 id: crypto.randomUUID(),
                 nombre: nombre.trim(),
-                srcImage: srcImage,
+                srcImage: finalImageUrl,
                 estado: estado,
                 createdAt: new Date(),
                 updatedAt: new Date()
@@ -117,12 +132,11 @@ export const createVehiculo = async (prevState: ActionState, formData: FormData)
 };
 
 export const actualizarVehiculo = async (prevState: ActionState, formData: FormData): Promise<ActionState> => {
- 
     try {
         const id = formData.get('id') as string;
         const nombre = formData.get('nombre') as string;
-        const srcImageRaw = formData.get('srcImage') as string;
         const estadoValue = formData.get('estado');
+        const imageEntry = formData.get('srcImage');
 
         if (!nombre || nombre.trim() === '') {
             return {
@@ -142,14 +156,22 @@ export const actualizarVehiculo = async (prevState: ActionState, formData: FormD
             };
         }
 
-        const srcImage = cleanImageUrl(srcImageRaw);
+        let finalImageUrl = existe.srcImage;
+
+        if (imageEntry instanceof File && imageEntry.size > 0) {
+            finalImageUrl = await uploadToCloudinary(imageEntry);
+        } 
+        else if (typeof imageEntry === 'string' && imageEntry.trim() !== '') {
+            finalImageUrl = cleanImageUrl(imageEntry);
+        }
+
         const estado = estadoValue === 'true';
 
         const vehiculoActualizado = await prisma.vehiculo.update({
             where: { id },
             data: {
                 nombre: nombre.trim(),
-                srcImage: srcImage,
+                srcImage: finalImageUrl,
                 estado: estado,
                 updatedAt: new Date()
             }
@@ -177,9 +199,7 @@ export const deleteVehiculo = async (prevState: ActionState, formData: FormData)
             where: { id },
             include: {
                 vehiculo_servicio: {
-                    include: {
-                        turno: true
-                    }
+                    include: { turno: true }
                 }
             }
         });
@@ -209,6 +229,7 @@ export const deleteVehiculo = async (prevState: ActionState, formData: FormData)
                 updatedAt: new Date()
             }
         });
+        
         revalidatePath('/vehiculo');
         
         return {

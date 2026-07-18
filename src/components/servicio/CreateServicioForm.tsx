@@ -1,11 +1,10 @@
-// components/servicio/CreateServicioForm.tsx
 "use client";
 
 import { createServicio } from "@/actions/servicio-actions";
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
-import { useEffect, useRef } from "react";
 import { Button } from "../ui/button";
+import ImageLoader from "../ui/ImageLoader";
 
 const initialState = {
     success: false,
@@ -44,16 +43,10 @@ export default function CreateServicioForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="srcImage" className="block text-sm font-medium mb-1">
-                        URL de Imagen
+                    <label className="block text-sm font-medium mb-1">
+                        Imagen del Servicio
                     </label>
-                    <input
-                        type="text"
-                        id="srcImage"
-                        name="srcImage"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://ejemplo.com/imagen.jpg"
-                    />
+                    <ImageLoader name="srcImage" />
                 </div>
 
                 <div className="flex items-center">
@@ -84,7 +77,6 @@ export default function CreateServicioForm() {
 
 function SubmitButton() {
     const { pending } = useFormStatus();
-    
     return (
         <Button
             type="submit"
