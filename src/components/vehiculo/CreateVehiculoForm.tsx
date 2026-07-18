@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef } from "react";
 import { Button } from "../ui/button";
+import ImageLoader from "../ui/ImageLoader";
 
 const initialState = {
     success: false,
@@ -47,18 +48,9 @@ export default function CreateVehiculoForm() {
 
                 <div>
                     <label htmlFor="srcImage" className="block text-sm font-medium mb-1">
-                        URL de Imagen
+                        Imagen del Vehículo
                     </label>
-                    <input
-                        type="text"
-                        id="srcImage"
-                        name="srcImage"
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="https://ejemplo.com/imagen.jpg o /images/foto.jpg"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                        Deja vacío si no tienes imagen
-                    </p>
+                    <ImageLoader name="srcImage" />
                 </div>
 
                 <div className="flex items-center">
