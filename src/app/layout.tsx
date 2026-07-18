@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LayoutComponent from "@/components/LayoutComponent";
 import { auth } from "@/auth";
-// 1. Importa el cargador
 import NextTopLoader from 'nextjs-toploader';
 import AppGate from "@/components/AppGate";
 
@@ -37,14 +36,12 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased w-dvw`}>
-        {/* 2. Implementa el loader aquí */}
         <NextTopLoader 
-          color="#6fa9da" // Tu color celeste característico
+          color="#6fa9da"
           showSpinner={true}
           height={3}
           zIndex={9999}
         />
-        
         <LayoutComponent session={session}>
           <AppGate>
             {children}
