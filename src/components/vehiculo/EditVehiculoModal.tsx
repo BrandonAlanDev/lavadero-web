@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useEffect, useRef } from "react";
 import { Button } from "../ui/button";
+import ImageLoader from "../ui/ImageLoader";
 
 const initialState = {
     success: false,
@@ -74,16 +75,9 @@ export default function EditVehiculoModal({ vehiculo, onClose }: EditVehiculoMod
 
                         <div>
                             <label htmlFor="srcImage" className="block text-sm font-medium mb-1">
-                                URL de Imagen
+                                Imagen del Vehículo
                             </label>
-                            <input
-                                type="text"
-                                id="srcImage"
-                                name="srcImage"
-                                defaultValue={vehiculo.srcImage || ""}
-                                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="/images/foto.jpg o https://..."
-                            />
+                            <ImageLoader name="srcImage" initialImage={vehiculo.srcImage} />
                         </div>
 
                         <div className="flex items-center">
