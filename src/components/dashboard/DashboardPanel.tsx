@@ -14,12 +14,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-
-// Definición de tipos basada en lo que devuelve action
 type TurnoWithDetails = Awaited<ReturnType<typeof getUserTurnos>>[0];
 
 export default function DashboardPanel({ user }: { user: any }) {
-  // Añadimos 'usuarios' a los estados posibles
   const [activeTab, setActiveTab] = useState<'info' | 'turnos' | 'usuarios'>('info');
   const [turnos, setTurnos] = useState<TurnoWithDetails[]>([]);
   const [loadingTurnos, setLoadingTurnos] = useState(false);

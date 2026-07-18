@@ -279,9 +279,19 @@ function TurnoCard({session, turno }: { session: any; turno: Turno }) {
                         <p className="text-red-600 text-xs mt-2">{state.error}</p>
                     )}
                     {state.success && (
-                        <p className="text-green-600 text-xs mt-2">
-                            ✅ Turno cancelado
-                        </p>
+                        <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-center space-y-2">
+                            <p className="text-red-700 text-sm font-medium">✅ Turno cancelado</p>
+                            {state.data?.whatsappUrl && (
+                                <a
+                                    href={state.data.whatsappUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center justify-center bg-[#25D366] text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#128C7E] transition-colors w-full"
+                                >
+                                    Notificar Cancelación
+                                </a>
+                            )}
+                        </div>
                     )}
                     {stateComplete.error && (
                         <p className="text-red-600 text-xs mt-2">{stateComplete.error}</p>
