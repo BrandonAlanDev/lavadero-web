@@ -58,6 +58,7 @@ export default function CreateTurnoForm({ session }: { session: any }) {
     const [selectedUser, setSelectedUser] = useState<UsuarioData | null>(
         session.user.role === "USER" ? { id: session.user.id, name: session.user.name, email: session.user.email } : null
     );
+    const [whatsappLink, setWhatsappLink] = useState<string | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -94,6 +95,9 @@ export default function CreateTurnoForm({ session }: { session: any }) {
 
     useEffect(() => {
         if (state.success) {
+            if (state.data?.whatsappUrl) {
+                setWhatsappLink(state.data.whatsappUrl);
+            }
             alert("✅ Turno creado correctamente");
             formRef.current?.reset();
             setSelectedConfigId("");
@@ -110,6 +114,23 @@ export default function CreateTurnoForm({ session }: { session: any }) {
         <div className="bg-white rounded-xl shadow-sm border p-6 max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Nuevo Turno</h2>
             
+            {whatsappLink && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex flex-col items-center gap-3">
+                    <p className="text-green-800 font-medium text-center">
+                        ¡Reserva guardada! Haz clic en el siguiente botón para notificar al local por WhatsApp.
+                    </p>
+                    <a 
+                        href={whatsappLink} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={() => setWhatsappLink(null)}
+                        className="inline-flex items-center justify-center bg-[#25D366] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-[#128C7E] transition-colors shadow-sm"
+                    >
+                        Enviar a WhatsApp
+                    </a>
+                </div>
+            )}
+
             <form ref={formRef} action={formAction} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
